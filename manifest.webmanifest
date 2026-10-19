@@ -1,0 +1,15 @@
+{
+  "name": "Mi Rutina Gym",
+  "short_name": "Rutina Gym",
+  "description": "Tu rutina semanal de entrenamiento, también sin conexión.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101312",
+  "theme_color": "#101312",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purposce": "any" }
+  ]
+}
