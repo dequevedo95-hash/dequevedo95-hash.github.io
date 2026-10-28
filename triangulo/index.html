@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#2A2521" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Triángulo" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    
+    <link rel="icon" href="data:," />
+    <title>Laboratorio del Triángulo de Exposición</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#FAF6EE; --bg2:#FFFDF8; --ink:#2A2521; --ink-soft:#5C5348; --line:#E3D7C3;
+        --arena:#EADFC8; --terra:#C06B47; --terra-dark:#9E5233; --terra-soft:#F3DED2;
+        --ok:#4C7A4F; --ok-bg:#E4EFE0; --warn:#A85B1E; --warn-bg:#FBEEDC; --bad:#A03A2E; --bad-bg:#F9E2DC;
+        --card:#FFFDF8; --shadow:0 10px 30px rgba(42,37,33,.10);
+        --scene-bright:1;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#1D1915; --bg2:#26211B; --ink:#F3EAD9; --ink-soft:#C9BBA3; --line:#453B2F;
+          --arena:#332B21; --terra:#D98B63; --terra-dark:#E0A075; --terra-soft:#3D2C22;
+          --ok:#9CC493; --ok-bg:#26351F; --warn:#E5B26B; --warn-bg:#3A2E18; --bad:#EE9A8C; --bad-bg:#3D231E;
+          --card:#26211B; --shadow:0 10px 30px rgba(0,0,0,.35);
+        }
+      }
+      *{box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      body{margin:0;background:var(--bg);color:var(--ink);font-family:"Quicksand",system-ui,sans-serif;font-size:16px;line-height:1.55}
+      .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 56px}
+      h1,h2,h3{font-family:"Cormorant Garamond",serif;line-height:1.08;margin:0}
+      h1{font-size:clamp(2rem,5.4vw,3.4rem);font-weight:700;max-width:16ch}
+      h2{font-size:clamp(1.55rem,3.4vw,2.15rem);font-weight:700}
+      p{margin:0}
+      .lede{margin-top:12px;font-size:1.06rem;color:var(--ink-soft);max-width:62ch}
+      .lede strong{color:var(--ink)}
+      .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+      .chip{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.9rem}
+      .chip .dot{width:9px;height:9px;border-radius:50%;background:var(--terra);flex:none}
+      /* ---------- layout del laboratorio ---------- */
+      .lab{display:grid;grid-template-columns:1.25fr .95fr;gap:20px;margin-top:22px;align-items:start}
+      @media (max-width:920px){.lab{grid-template-columns:1fr}}
+      .visor-card{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+      .visor-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+      .visor-head .t{font-weight:700;font-size:.95rem}
+      .escenas{display:flex;gap:6px;flex-wrap:wrap}
+      .escena-btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;font-family:inherit;font-weight:700;font-size:.83rem;cursor:pointer}
+      .escena-btn[aria-pressed="true"]{background:var(--terra);border-color:var(--terra);color:#FFF7EC}
+      .visor{position:relative;aspect-ratio:16/10.4;background:#E9D9BE;overflow:hidden}
+      .visor svg.scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+      .tint{position:absolute;inset:0;pointer-events:none;transition:background .35s,opacity .35s}
+      .grain{position:absolute;inset:-40px;pointer-events:none;opacity:0;mix-blend-mode:overlay;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+      .blackout{position:absolute;inset:0;background:#0B0906;opacity:0;pointer-events:none}
+      .whiteout{position:absolute;inset:0;background:#FFFDF4;opacity:0;pointer-events:none}
+      .visor-foot{padding:12px 14px 14px}
+      /* fotómetro */
+      .meter-labels{display:flex;justify-content:space-between;font-size:.72rem;font-weight:700;color:var(--ink-soft);letter-spacing:.02em}
+      .meter{position:relative;height:16px;border-radius:999px;margin-top:5px;background:linear-gradient(90deg,var(--bad) 0%,var(--warn) 30%,var(--ok) 47%,var(--ok) 53%,var(--warn) 70%,var(--bad) 100%)}
+      .needle{position:absolute;top:-5px;width:4px;height:26px;border-radius:2px;background:var(--ink);left:50%;transform:translateX(-50%);transition:left .25s ease;box-shadow:0 0 0 2px var(--card)}
+      .meter-msg{margin-top:9px;font-weight:700;font-size:.95rem}
+      .meter-msg small{display:block;font-weight:500;color:var(--ink-soft);font-size:.86rem;margin-top:2px}
+      .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+      .badge{font-size:.78rem;font-weight:700;border-radius:999px;padding:5px 10px;background:var(--arena);color:var(--ink)}
+      .badge.good{background:var(--ok-bg);color:var(--ok)}
+      .badge.alert{background:var(--warn-bg);color:var(--warn)}
+      .badge.bad{background:var(--bad-bg);color:var(--bad)}
+      /* ---------- controles ---------- */
+      .controls{display:flex;flex-direction:column;gap:14px}
+      .ctl{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+      .ctl.ap{border-top:5px solid var(--terra)}
+      .ctl.tv{border-top:5px solid #7C8A4F}
+      .ctl.iso{border-top:5px solid #4F6E8A}
+      .ctl-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+      .ctl-name{font-weight:700;font-size:1rem}
+      .ctl-name span{display:block;font-size:.8rem;font-weight:600;color:var(--ink-soft)}
+      .ctl-value{font-family:"Cormorant Garamond",serif;font-size:2rem;font-weight:700;line-height:1;white-space:nowrap}
+      .ctl-value small{font-size:1rem;color:var(--ink-soft);font-family:"Quicksand",sans-serif;font-weight:600}
+      .stepper{display:flex;align-items:center;gap:10px;margin-top:12px}
+      .step-btn{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.25rem;font-weight:700;cursor:pointer;line-height:1}
+      .step-btn:active{transform:scale(.94)}
+      input[type=range]{flex:1;accent-color:var(--terra);height:36px;cursor:pointer;min-width:0}
+      .ticks{display:flex;justify-content:space-between;font-size:.68rem;font-weight:700;color:var(--ink-soft);margin-top:2px;padding:0 52px}
+      .ctl-effect{margin-top:10px;font-size:.88rem;color:var(--ink-soft);background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:9px 11px}
+      .ctl-effect strong{color:var(--ink)}
+      .switch-row{display:flex;gap:10px;align-items:flex-start;background:var(--terra-soft);border-radius:16px;padding:13px 14px}
+      .switch-row p{font-size:.88rem}
+      .switch-row p strong{display:block;font-size:.95rem}
+      .switch{flex:none;margin-top:2px;cursor:pointer}
+      .switch input{width:30px;height:30px;margin:0;cursor:pointer;accent-color:var(--terra)}
+      .presets{display:flex;flex-wrap:wrap;gap:8px}
+      .preset-btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:10px 13px;font-family:inherit;font-weight:700;font-size:.86rem;cursor:pointer;text-align:left}
+      .preset-btn small{display:block;font-weight:500;color:var(--ink-soft);font-size:.76rem}
+      .preset-btn:active{transform:scale(.98)}
+      .formula{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;font-weight:700;font-size:.92rem;text-align:center}
+      .formula .op{color:var(--terra);font-size:1.1rem}
+      .formula .res{color:var(--ok)}
+      /* ---------- secciones ---------- */
+      section{margin-top:44px}
+      .sec-intro{color:var(--ink-soft);margin-top:8px;max-width:66ch}
+      .tri-grid{display:grid;grid-template-columns:340px 1fr;gap:22px;margin-top:18px;align-items:start}
+      @media (max-width:860px){.tri-grid{grid-template-columns:1fr}}
+      .tri-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+      .tri-card svg{width:100%;height:auto;display:block}
+      .tri-node{cursor:pointer}
+      .tri-node circle{transition:stroke-width .15s}
+      .tri-node:focus-visible{outline:2px solid var(--terra);outline-offset:3px;border-radius:50%}
+      .explain{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+      .explain h3{font-size:1.5rem;margin-bottom:6px}
+      .explain p{color:var(--ink-soft)}
+      .explain p strong{color:var(--ink)}
+      .explain .ejemplo{margin-top:12px;background:var(--bg);border-radius:12px;padding:11px 13px;font-size:.92rem;color:var(--ink)}
+      .retos{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+      @media (max-width:860px){.retos{grid-template-columns:1fr}}
+      .reto{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+      .reto h3{font-size:1.3rem}
+      .reto p{font-size:.92rem;color:var(--ink-soft);flex:1}
+      .reto .estado{font-weight:700;font-size:.88rem;border-radius:10px;padding:8px 11px;background:var(--arena)}
+      .reto.done .estado{background:var(--ok-bg);color:var(--ok)}
+      .reto .meta{font-size:.8rem;font-weight:700;color:var(--terra-dark)}
+      @media (prefers-color-scheme: dark){.reto .meta{color:var(--terra)}}
+      .reto-btn{align-self:flex-start;border:none;background:var(--terra);color:#FFF7EC;border-radius:999px;padding:9px 16px;font-family:inherit;font-weight:700;font-size:.86rem;cursor:pointer}
+      table{width:100%;border-collapse:collapse;margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;font-size:.92rem}
+      th,td{padding:11px 13px;text-align:left;vertical-align:top}
+      th{background:var(--arena);font-size:.82rem;letter-spacing:.03em}
+      tr + tr td{border-top:1px solid var(--line)}
+      td strong{white-space:nowrap}
+      .stack{display:flex;flex-direction:column;gap:0}
+      @media (max-width:640px){
+        table,thead,tbody,tr,td{display:block;width:100%}
+        thead{display:none}
+        tr{padding:10px 4px}
+        tr + tr{border-top:2px solid var(--line)}
+        td{padding:5px 13px;border:none!important}
+        td::before{content:attr(data-h);display:block;font-size:.72rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+      }
+      .canon{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+      @media (max-width:860px){.canon{grid-template-columns:1fr}}
+      .modo{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+      .modo .dial{display:inline-block;font-family:"Cormorant Garamond",serif;font-weight:700;font-size:1.7rem;background:var(--terra-soft);color:var(--terra-dark);border-radius:12px;padding:2px 14px;margin-bottom:8px}
+      @media (prefers-color-scheme: dark){.modo .dial{color:var(--terra)}}
+      .modo h3{font-size:1.25rem;margin-bottom:5px}
+      .modo p{font-size:.92rem;color:var(--ink-soft)}
+      footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--ink-soft);font-size:.88rem}
+      .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+      @media (prefers-reduced-motion: no-preference){
+        .bob{animation:bob 2.6s ease-in-out infinite}
+        @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Laboratorio del triángulo de exposición</h1>
+        <p class="lede">Mueve la <strong>apertura</strong>, la <strong>velocidad</strong> y el <strong>ISO</strong> y mira la foto cambiar al momento: brillo, fondo desenfocado, movimiento y ruido. Sin teoría suelta — todo se aprende tocando, como en la cámara.</p>
+        <div class="topbar">
+          <span class="chip"><span class="dot"></span> Escena: retrato en la calle, luz de día</span>
+          <span class="chip">La modelo no se mueve · el ciclista sí</span>
+        </div>
+      </header>
+
+      <div class="lab">
+        <!-- VISOR -->
+        <div class="visor-card">
+          <div class="visor-head">
+            <span class="t">📷 Tu foto, en vivo</span>
+            <div class="escenas" role="group" aria-label="Luz de la escena">
+              <button class="escena-btn" data-escena="dia" aria-pressed="true">☀️ Día</button>
+              <button class="escena-btn" data-escena="tarde" aria-pressed="false">🌇 Atardecer</button>
+              <button class="escena-btn" data-escena="noche" aria-pressed="false">🌙 Interior / noche</button>
+            </div>
+          </div>
+          <div class="visor" id="visor">
+            <svg class="scene" id="sceneSvg" viewBox="0 0 640 416" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Simulación de la foto: una modelo posando en una calle con cafés, y un ciclista pasando">
+              <defs>
+                <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#F7C873"/><stop offset=".55" stop-color="#FBE3B0"/><stop offset="1" stop-color="#FDF3DC"/>
+                </linearGradient>
+                <linearGradient id="suelo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#D9B98C"/><stop offset="1" stop-color="#B98F5F"/>
+                </linearGradient>
+              </defs>
+              <!-- FONDO (se desenfoca con la apertura) -->
+              <g id="bgLayer">
+                <rect x="0" y="0" width="640" height="290" fill="url(#sky)"/>
+                <circle cx="540" cy="70" r="34" fill="#FFF3C4"/>
+                <circle cx="540" cy="70" r="52" fill="#FFE9A8" opacity=".45"/>
+                <rect x="18" y="96" width="104" height="168" rx="6" fill="#C98A5E"/>
+                <rect x="34" y="116" width="20" height="26" fill="#FDEBC8"/><rect x="66" y="116" width="20" height="26" fill="#FDEBC8"/>
+                <rect x="34" y="156" width="20" height="26" fill="#FDEBC8"/><rect x="66" y="156" width="20" height="26" fill="#FDEBC8"/>
+                <rect x="140" y="70" width="128" height="194" rx="6" fill="#B4713F"/>
+                <rect x="158" y="92" width="24" height="30" fill="#FFEFC9"/><rect x="196" y="92" width="24" height="30" fill="#FFEFC9"/><rect x="158" y="136" width="24" height="30" fill="#FFEFC9"/><rect x="196" y="136" width="24" height="30" fill="#FFEFC9"/>
+                <rect x="140" y="196" width="128" height="16" fill="#8A4F2A"/>
+                <rect x="150" y="216" width="108" height="48" fill="#7C4525"/>
+                <text x="204" y="246" text-anchor="middle" font-family="Georgia,serif" font-size="17" fill="#FFEFC9">CAFÉ</text>
+                <rect x="420" y="86" width="96" height="178" rx="6" fill="#CE9464"/>
+                <rect x="436" y="106" width="20" height="26" fill="#FDEBC8"/><rect x="468" y="106" width="20" height="26" fill="#FDEBC8"/>
+                <rect x="436" y="146" width="20" height="26" fill="#FDEBC8"/><rect x="468" y="146" width="20" height="26" fill="#FDEBC8"/>
+                <rect x="530" y="120" width="92" height="144" rx="6" fill="#A9663A"/>
+                <rect x="546" y="140" width="18" height="24" fill="#FDEBC8"/><rect x="578" y="140" width="18" height="24" fill="#FDEBC8"/>
+                <circle cx="330" cy="150" r="42" fill="#7C8A4F"/>
+                <circle cx="296" cy="176" r="30" fill="#8A9A58"/>
+                <circle cx="366" cy="178" r="28" fill="#6E7D43"/>
+                <rect x="324" y="180" width="11" height="84" fill="#7A5230"/>
+                <circle cx="70" cy="238" r="9" fill="#C06B47"/><circle cx="98" cy="238" r="9" fill="#D98B63"/><circle cx="566" cy="238" r="9" fill="#C06B47"/><circle cx="594" cy="238" r="9" fill="#D98B63"/>
+              </g>
+              <rect x="0" y="264" width="640" height="152" fill="url(#suelo)"/>
+              <rect x="0" y="264" width="640" height="10" fill="#A97C4C"/>
+              <!-- CICLISTA (se barre con la velocidad) -->
+              <g id="ghostLayer" opacity="0">
+                <g transform="translate(-46,0)" opacity=".35"><use href="#ciclistaForma"/></g>
+                <g transform="translate(-24,0)" opacity=".55"><use href="#ciclistaForma"/></g>
+              </g>
+              <g id="bikeLayer">
+                <g id="ciclistaForma">
+                  <circle cx="486" cy="316" r="21" fill="none" stroke="#2A2521" stroke-width="5"/>
+                  <circle cx="552" cy="316" r="21" fill="none" stroke="#2A2521" stroke-width="5"/>
+                  <path d="M486 316 L516 282 L552 316 L520 316 L504 292" fill="none" stroke="#9E5233" stroke-width="5" stroke-linejoin="round"/>
+                  <path d="M516 282 L544 268" stroke="#2A2521" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M516 282 L500 306" stroke="#2A2521" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M520 272 L516 282" stroke="#2A2521" stroke-width="7" stroke-linecap="round"/>
+                  <circle cx="523" cy="258" r="11" fill="#8A5A34"/>
+                  <path d="M512 252 Q523 240 536 250 L534 258 Q523 250 514 259 Z" fill="#C06B47"/>
+                  <rect x="506" y="266" width="24" height="13" rx="6" fill="#4F6E8A" transform="rotate(14 518 272)"/>
+                </g>
+              </g>
+              <!-- MODELO (siempre nítida: es tu punto de enfoque) -->
+              <g id="subjectLayer" class="bob">
+                <ellipse cx="212" cy="392" rx="62" ry="10" fill="#8A6238" opacity=".5"/>
+                <path d="M186 268 Q182 330 176 388 L196 388 Q204 344 210 316 Q216 344 224 388 L246 388 Q240 328 234 268 Z" fill="#5B4632"/>
+                <path d="M178 196 Q176 246 184 272 L236 272 Q244 246 242 196 Q238 172 210 172 Q182 172 178 196 Z" fill="#C06B47"/>
+                <path d="M180 200 Q158 224 156 258" fill="none" stroke="#A9714B" stroke-width="13" stroke-linecap="round"/>
+                <path d="M240 200 Q258 220 254 246" fill="none" stroke="#A9714B" stroke-width="13" stroke-linecap="round"/>
+                <circle cx="248" cy="252" r="8" fill="#A9714B"/>
+                <rect x="228" y="238" width="26" height="17" rx="3.5" fill="#2A2521" transform="rotate(-8 241 246)"/>
+                <circle cx="238" cy="246" r="4.5" fill="#8FB6C9"/>
+                <circle cx="210" cy="146" r="27" fill="#B57E52"/>
+                <path d="M182 148 Q178 108 210 104 Q244 108 240 150 Q240 128 226 122 Q232 140 224 148 Q216 128 198 124 Q186 130 182 148 Z" fill="#33231A"/>
+                <path d="M184 196 Q180 236 188 262 L196 262 Q192 226 194 198 Z" fill="#33231A"/>
+                <path d="M236 196 Q240 236 232 262 L224 262 Q228 226 226 198 Z" fill="#33231A"/>
+                <circle cx="200" cy="146" r="3.4" fill="#2A2521"/><circle cx="220" cy="146" r="3.4" fill="#2A2521"/>
+                <path d="M202 160 Q210 166 218 160" fill="none" stroke="#7C3E21" stroke-width="2.6" stroke-linecap="round"/>
+              </g>
+            </svg>
+            <div class="tint" id="tint"></div>
+            <div class="grain" id="grain"></div>
+            <div class="blackout" id="blackout"></div>
+            <div class="whiteout" id="whiteout"></div>
+          </div>
+          <div class="visor-foot">
+            <div class="meter-labels"><span>−3 subexpuesta (oscura)</span><span>0 ✓</span><span>+3 sobreexpuesta (quemada)</span></div>
+            <div class="meter" aria-hidden="true"><div class="needle" id="needle"></div></div>
+            <p class="meter-msg" id="meterMsg" role="status"></p>
+            <div class="badges" id="badges"></div>
+          </div>
+        </div>
+
+        <!-- CONTROLES -->
+        <div class="controls">
+          <div class="formula" id="formula" aria-live="polite"></div>
+
+          <div class="ctl ap">
+            <div class="ctl-head">
+              <p class="ctl-name">Apertura <span>El hueco del lente · profundidad de campo</span></p>
+              <p class="ctl-value" id="apVal">f/5.6</p>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" data-step="ap:-1" aria-label="Cerrar apertura un paso">−</button>
+              <input type="range" id="apRange" min="0" max="6" step="1" value="3" aria-label="Apertura" />
+              <button class="step-btn" data-step="ap:1" aria-label="Abrir apertura un paso">+</button>
+            </div>
+            <div class="ticks"><span>f/1.8</span><span>f/2.8</span><span>f/4</span><span>f/5.6</span><span>f/8</span><span>f/11</span><span>f/16</span></div>
+            <p class="ctl-effect" id="apEffect"></p>
+          </div>
+
+          <div class="ctl tv">
+            <div class="ctl-head">
+              <p class="ctl-name">Velocidad <span>El tiempo que entra luz · movimiento</span></p>
+              <p class="ctl-value" id="tvVal">1/125</p>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" data-step="tv:-1" aria-label="Velocidad más rápida un paso">−</button>
+              <input type="range" id="tvRange" min="0" max="6" step="1" value="3" aria-label="Velocidad de obturación" />
+              <button class="step-btn" data-step="tv:1" aria-label="Velocidad más lenta un paso">+</button>
+            </div>
+            <div class="ticks"><span>1/2</span><span>1/8</span><span>1/30</span><span>1/125</span><span>1/500</span><span>1/2000</span><span>1/8000</span></div>
+            <p class="ctl-effect" id="tvEffect"></p>
+          </div>
+
+          <div class="ctl iso">
+            <div class="ctl-head">
+              <p class="ctl-name">ISO <span>La sensibilidad del sensor · ruido</span></p>
+              <p class="ctl-value" id="isoVal">100</p>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" data-step="iso:-1" aria-label="Bajar ISO un paso">−</button>
+              <input type="range" id="isoRange" min="0" max="6" step="1" value="0" aria-label="ISO" />
+              <button class="step-btn" data-step="iso:1" aria-label="Subir ISO un paso">+</button>
+            </div>
+            <div class="ticks"><span>100</span><span>200</span><span>400</span><span>800</span><span>1600</span><span>3200</span><span>6400</span></div>
+            <p class="ctl-effect" id="isoEffect"></p>
+          </div>
+
+          <div class="switch-row">
+            <label class="switch" aria-label="Mantener la misma exposición al cambiar un control">
+              <input type="checkbox" id="lockExp" />
+            </label>
+            <p><strong>Mantener la misma exposición</strong>
+            Actívalo y mueve un solo control: el laboratorio compensa con otro para que el brillo no cambie. Así se ve la idea clave — <em>la misma luz se puede lograr con combinaciones distintas</em>, y lo que cambia es el efecto: fondo, movimiento o ruido.</p>
+          </div>
+
+          <div>
+            <p style="font-weight:700;margin-bottom:8px">Combinaciones listas para probar:</p>
+            <div class="presets">
+              <button class="preset-btn" data-preset="retrato">Retrato cremoso<small>f/1.8 · fondo derretido</small></button>
+              <button class="preset-btn" data-preset="deporte">Congelar acción<small>1/2000 · ciclista clavado</small></button>
+              <button class="preset-btn" data-preset="paisaje">Todo nítido<small>f/16 · de cerca a lejos</small></button>
+              <button class="preset-btn" data-preset="barrido">Barrido artístico<small>1/8 · movimiento con intención</small></button>
+              <button class="preset-btn" data-preset="base">Volver al inicio<small>f/5.6 · 1/125 · ISO 100</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRIÁNGULO -->
+      <section aria-labelledby="triH">
+        <h2 id="triH">El triángulo, en una sola idea</h2>
+        <p class="sec-intro">Cada esquina controla cuánta luz entra <strong>y</strong> deja un efecto secundario. Toca cada esquina para ver su explicación — es el mismo control de arriba, contado con palabras.</p>
+        <div class="tri-grid">
+          <div class="tri-card">
+            <svg viewBox="0 0 300 272" role="group" aria-label="Diagrama del triángulo de exposición">
+              <polygon points="150,34 268,226 32,226" fill="none" stroke="var(--line)" stroke-width="3" stroke-linejoin="round"/>
+              <g class="tri-node" data-explica="ap" tabindex="0" role="button" aria-label="Explicación de apertura">
+                <circle cx="150" cy="40" r="34" fill="#C06B47"/>
+                <text x="150" y="36" text-anchor="middle" font-size="12.5" font-weight="700" fill="#FFF7EC">APERTURA</text>
+                <text x="150" y="53" text-anchor="middle" font-size="12" fill="#FFF7EC">f/5.6</text>
+              </g>
+              <g class="tri-node" data-explica="tv" tabindex="0" role="button" aria-label="Explicación de velocidad">
+                <circle cx="44" cy="228" r="34" fill="#7C8A4F"/>
+                <text x="44" y="224" text-anchor="middle" font-size="11" font-weight="700" fill="#FFF7EC">VELOCIDAD</text>
+                <text x="44" y="241" text-anchor="middle" font-size="12" fill="#FFF7EC">1/125</text>
+              </g>
+              <g class="tri-node" data-explica="iso" tabindex="0" role="button" aria-label="Explicación de ISO">
+                <circle cx="256" cy="228" r="34" fill="#4F6E8A"/>
+                <text x="256" y="224" text-anchor="middle" font-size="12.5" font-weight="700" fill="#FFF7EC">ISO</text>
+                <text x="256" y="241" text-anchor="middle" font-size="12" fill="#FFF7EC">100</text>
+              </g>
+              <text x="150" y="168" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)">LUZ</text>
+              <text x="150" y="186" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)">la misma foto,</text>
+              <text x="150" y="201" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)">tres caminos</text>
+            </svg>
+          </div>
+          <div class="explain" id="explainBox" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- RETOS -->
+      <section aria-labelledby="retosH">
+        <h2 id="retosH">Tres retos para practicar aquí mismo</h2>
+        <p class="sec-intro">Cada reto se marca solo cuando tu combinación cumple la meta <strong>y</strong> la exposición queda correcta (fotómetro entre −1 y +1). Usa el botón para preparar la escena.</p>
+        <div class="retos">
+          <article class="reto" id="reto-retrato">
+            <h3>1 · Retrato con fondo cremoso</h3>
+            <p>La modelo nítida y el café de atrás derretido en bokeh, sin que la foto salga oscura ni quemada.</p>
+            <p class="meta">Meta: apertura f/2.8 o más abierta</p>
+            <button class="reto-btn" data-reto="retrato">Preparar escena</button>
+            <p class="estado">Todavía no · ajusta los controles</p>
+          </article>
+          <article class="reto" id="reto-congela">
+            <h3>2 · Congela al ciclista</h3>
+            <p>El ciclista pasa rápido: clávalo en el aire, sin barrido, manteniendo la foto bien expuesta.</p>
+            <p class="meta">Meta: velocidad 1/500 o más rápida</p>
+            <button class="reto-btn" data-reto="congela">Preparar escena</button>
+            <p class="estado">Todavía no · ajusta los controles</p>
+          </article>
+          <article class="reto" id="reto-noche">
+            <h3>3 · Noche limpia</h3>
+            <p>En la escena de noche hay poca luz: logra una foto bien expuesta sin pasar de ISO 1600, para que el ruido no se coma la imagen.</p>
+            <p class="meta">Meta: escena de noche · ISO 1600 o menos · exposición correcta</p>
+            <button class="reto-btn" data-reto="noche">Ir a la noche</button>
+            <p class="estado">Todavía no · ajusta los controles</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- TABLA -->
+      <section aria-labelledby="tablaH">
+        <h2 id="tablaH">La chuleta: qué ganas y qué pagas en cada paso</h2>
+        <p class="sec-intro">Cada paso («stop») duplica o parte a la mitad la luz. Nada es gratis: cada control cobra su precio en otro lado de la foto.</p>
+        <div class="stack">
+        <table>
+          <thead><tr><th>Control</th><th>Si lo abres / subes…</th><th>Ganas</th><th>Pagas</th><th>Úsalo cuando…</th></tr></thead>
+          <tbody>
+            <tr><td data-h="Control"><strong>Apertura</strong></td><td data-h="Efecto en la luz">Entra el doble de luz por paso</td><td data-h="Ganas">Fondo desenfocado, retrato con bokeh</td><td data-h="Pagas">Menos zona nítida: si la modelo se mueve, se sale de foco</td><td data-h="Úsalo cuando">Retratos (f/1.8–f/2.8) · grupos y paisajes al revés: f/8–f/11</td></tr>
+            <tr><td data-h="Control"><strong>Velocidad</strong></td><td data-h="Efecto en la luz">El doble de luz por paso al hacerla más lenta</td><td data-h="Ganas">Luz en sitios oscuros y barridos artísticos</td><td data-h="Pagas">Todo lo que se mueva sale borroso, y a pulso tiembla la foto</td><td data-h="Úsalo cuando">Acción: 1/500 o más · barrido: 1/8–1/30 siguiendo al sujeto</td></tr>
+            <tr><td data-h="Control"><strong>ISO</strong></td><td data-h="Efecto en la luz">El sensor «ve» el doble por paso</td><td data-h="Ganas">Disparar de noche sin bajar la velocidad ni abrir más</td><td data-h="Pagas">Ruido (granito) y menos detalle, peor a partir de 1600</td><td data-h="Úsalo cuando">Es el último recurso: primero apertura, después velocidad</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <!-- CANON -->
+      <section aria-labelledby="canonH">
+        <h2 id="canonH">Esto mismo, en el dial de tu Canon</h2>
+        <p class="sec-intro">No tienes que disparar en manual desde el día uno. La cámara tiene modos que manejan una parte del triángulo por ti mientras tú controlas el efecto que te importa.</p>
+        <div class="canon">
+          <div class="modo"><span class="dial">Av</span><h3>Prioridad de apertura</h3><p>Tú fijas el f/ (el desenfoque) y la cámara elige la velocidad. Es el modo natural para retratos: tú mandas en el fondo, ella cuida la luz.</p></div>
+          <div class="modo"><span class="dial">Tv</span><h3>Prioridad de velocidad</h3><p>Tú fijas el tiempo (congelar o barrer) y la cámara elige la apertura. Para deportes, niños, mascotas y todo lo que no se está quieto.</p></div>
+          <div class="modo"><span class="dial">M</span><h3>Manual</h3><p>Tú mandas en las tres esquinas y el fotómetro de la cámara (la rayita −3…+3, igual a la de este laboratorio) te dice si vas oscuro o quemado.</p></div>
+        </div>
+      </section>
+
+      <footer>
+        <p>Regla de oro para llevarte: <strong>primero decide el efecto</strong> (¿fondo cremoso? ¿movimiento congelado?), fija ese control, y compensa la luz con los otros dos. El ISO se toca de último.</p>
+      </footer>
+    </div>
+
+    <script>
+      (function(){
+        "use strict";
+        var APERTURAS = ["f/1.8","f/2.8","f/4","f/5.6","f/8","f/11","f/16"];
+        var VELOCIDADES = ["1/2","1/8","1/30","1/125","1/500","1/2000","1/8000"];
+        var ISOS = [100,200,400,800,1600,3200,6400];
+        var BG_BLUR = [9, 6.5, 4.5, 2.8, 1.5, 0.6, 0];
+        var BIKE_BLUR = [16, 11, 6.5, 2.6, 0.9, 0, 0];
+        var GHOST_OP = [0.85, 0.65, 0.4, 0.12, 0, 0, 0];
+        var GRAIN = [0, 0.05, 0.09, 0.15, 0.23, 0.34, 0.48];
+        var ESCENAS = {
+          dia:   { need: 0, tint: "rgba(0,0,0,0)", base: 1 },
+          tarde: { need: 2, tint: "rgba(146,64,20,0.20)", base: 0.82 },
+          noche: { need: 4, tint: "rgba(16,26,66,0.42)", base: 0.55 }
+        };
+        var ESCENA_NOMBRE = { dia:"día", tarde:"atardecer", noche:"noche / interior" };
+
+        var state = { ap: 3, tv: 3, iso: 0, escena: "dia" };
+
+        var $ = function(id){ return document.getElementById(id); };
+        var apRange=$("apRange"), tvRange=$("tvRange"), isoRange=$("isoRange");
+        var bgLayer=$("bgLayer"), bikeLayer=$("bikeLayer"), ghostLayer=$("ghostLayer");
+        var grain=$("grain"), tint=$("tint"), blackout=$("blackout"), whiteout=$("whiteout");
+        var needle=$("needle"), meterMsg=$("meterMsg"), badges=$("badges"), formula=$("formula");
+
+        function stops(){
+          var apLight = 3 - state.ap;      // abrir apertura = más luz
+          var tvLight = 3 - state.tv;      // velocidad más lenta = más luz
+          var isoLight = state.iso;        // ISO más alto = más sensibilidad
+          var total = apLight + tvLight + isoLight - ESCENAS[state.escena].need;
+          return { ap:apLight, tv:tvLight, iso:isoLight, total: total };
+        }
+        function fmtStop(n){ return (n>0?"+":"") + n; }
+
+        function render(){
+          apRange.value = state.ap; tvRange.value = state.tv; isoRange.value = state.iso;
+          $("apVal").textContent = APERTURAS[state.ap];
+          $("tvVal").innerHTML = VELOCIDADES[state.tv] + " <small>s</small>";
+          $("isoVal").textContent = ISOS[state.iso];
+
+          var s = stops();
+          var ev = s.total;
+
+          /* --- brillo de la escena --- */
+          var bright = ESCENAS[state.escena].base * Math.pow(2, ev * 0.5);
+          bright = Math.max(0.08, Math.min(2.6, bright));
+          var scene = $("sceneSvg");
+          scene.style.filter = "brightness(" + bright.toFixed(2) + ") saturate(" + (state.iso>=5 ? 0.82 : state.iso>=4 ? 0.92 : 1) + ")";
+          blackout.style.opacity = ev <= -2 ? Math.min(0.55, (-ev - 1.5) * 0.28) : 0;
+          whiteout.style.opacity = ev >= 2 ? Math.min(0.5, (ev - 1.5) * 0.24) : 0;
+          tint.style.background = ESCENAS[state.escena].tint;
+
+          /* --- efectos secundarios --- */
+          bgLayer.style.filter = "blur(" + BG_BLUR[state.ap] + "px)";
+          bikeLayer.style.filter = "blur(" + BIKE_BLUR[state.tv] + "px)";
+          ghostLayer.style.filter = "blur(" + (BIKE_BLUR[state.tv] * 0.8) + "px)";
+          ghostLayer.style.opacity = GHOST_OP[state.tv];
+          grain.style.opacity = GRAIN[state.iso];
+
+          /* --- fotómetro --- */
+          var pct = 50 + (Math.max(-3, Math.min(3, ev)) / 3) * 47;
+          needle.style.left = pct + "%";
+          var msg, detalle;
+          if (ev === 0){ msg = "✓ Exposición correcta"; detalle = "La luz que entra es justo la que la escena de " + ESCENA_NOMBRE[state.escena] + " necesita."; }
+          else if (ev === 1){ msg = "Un paso sobreexpuesta (+1)"; detalle = "Se recupera fácil al editar, pero vigila las zonas blancas."; }
+          else if (ev === -1){ msg = "Un paso subexpuesta (−1)"; detalle = "Un poco oscura: todavía se salva al editar, con algo más de ruido."; }
+          else if (ev >= 2){ msg = "Sobreexpuesta (" + fmtStop(ev) + ") · zonas quemadas"; detalle = "Lo quemado no vuelve: baja ISO, cierra apertura o sube la velocidad."; }
+          else { msg = "Subexpuesta (" + fmtStop(ev) + ") · demasiado oscura"; detalle = "Casi no hay información en las sombras: abre apertura, baja la velocidad o sube el ISO."; }
+          meterMsg.innerHTML = msg + "<small>" + detalle + "</small>";
+
+          /* --- insignias de efectos --- */
+          var b = [];
+          b.push({ t: state.ap <= 1 ? "Fondo muy desenfocado (bokeh)" : state.ap <= 3 ? "Fondo algo suave" : state.ap >= 5 ? "Casi todo nítido" : "Fondo bastante nítido",
+                   c: state.ap <= 1 ? "good" : "" });
+          b.push({ t: state.tv <= 1 ? "Ciclista muy barrido" : state.tv === 2 ? "Ciclista con barrido" : state.tv >= 4 ? "Ciclista congelado" : "Ciclista casi nítido",
+                   c: state.tv >= 4 ? "good" : state.tv <= 1 ? "alert" : "" });
+          b.push({ t: state.iso === 0 ? "Sin ruido (ISO 100)" : state.iso <= 2 ? "Ruido apenas visible" : state.iso <= 4 ? "Ruido notable" : "Ruido fuerte: granito por toda la foto",
+                   c: state.iso <= 2 ? "good" : state.iso <= 4 ? "alert" : "bad" });
+          if (state.tv <= 1) b.push({ t:"⚠ A pulso, tu propia mano también temblaría a esta velocidad", c:"alert" });
+          badges.innerHTML = b.map(function(x){ return '<span class="badge ' + x.c + '">' + x.t + "</span>"; }).join("");
+
+          /* --- fórmula --- */
+          formula.innerHTML =
+            "<span>" + APERTURAS[state.ap] + " (" + fmtStop(s.ap) + ")</span><span class='op'>+</span>" +
+            "<span>" + VELOCIDADES[state.tv] + " s (" + fmtStop(s.tv) + ")</span><span class='op'>+</span>" +
+            "<span>ISO " + ISOS[state.iso] + " (" + fmtStop(s.iso) + ")</span><span class='op'>=</span>" +
+            "<span class='res' style='color:" + (ev===0 ? "var(--ok)" : "var(--bad)") + "'>" + (ev===0 ? "luz perfecta ✓" : fmtStop(ev) + " pasos") + "</span>";
+
+          /* --- textos de cada control --- */
+          $("apEffect").innerHTML = state.ap <= 1
+            ? "<strong>Fondo derretido.</strong> Con " + APERTURAS[state.ap] + " la zona nítida es finísima: modelo enfocada, café convertido en manchas suaves. Ideal para retrato."
+            : state.ap >= 5
+            ? "<strong>Todo en foco.</strong> Con " + APERTURAS[state.ap] + " se ve nítido desde la modelo hasta los edificios. Ideal para grupos y paisajes — pero entra poca luz."
+            : "<strong>Punto medio.</strong> " + APERTURAS[state.ap] + " separa un poco a la modelo del fondo sin perder el ambiente. Muy usado en eventos.";
+          $("tvEffect").innerHTML = state.tv <= 1
+            ? "<strong>Barrido total.</strong> A " + VELOCIDADES[state.tv] + " s el ciclista se convierte en estela. La modelo sale nítida porque no se mueve (y porque en la vida real usarías trípode o apoyo)."
+            : state.tv >= 4
+            ? "<strong>Movimiento congelado.</strong> A " + VELOCIDADES[state.tv] + " s hasta las ruedas quedan clavadas. El precio: entra muy poca luz, hay que compensar."
+            : state.tv === 2
+            ? "<strong>Barrido suave.</strong> A " + VELOCIDADES[state.tv] + " s el ciclista ya deja estela: se siente la velocidad sin perderlo del todo."
+            : "<strong>Zona segura.</strong> " + VELOCIDADES[state.tv] + " s congela a personas caminando y no tiembla a pulso. El punto de partida clásico.";
+          $("isoEffect").innerHTML = state.iso === 0
+            ? "<strong>Calidad máxima.</strong> ISO 100: sin granito, colores limpios. Solo funciona cuando sobra luz o compensas con los otros dos."
+            : state.iso <= 2
+            ? "<strong>Casi limpio.</strong> ISO " + ISOS[state.iso] + ": el ruido apenas se nota, y ganas " + state.iso + (state.iso===1 ? " paso" : " pasos") + " de luz. Zona cómoda."
+            : state.iso <= 4
+            ? "<strong>Ruido visible.</strong> ISO " + ISOS[state.iso] + ": ya se ve el granito, sobre todo en las sombras. Útil de noche, con moderación."
+            : "<strong>Emergencia.</strong> ISO " + ISOS[state.iso] + ": la foto se salva, pero el granito se come el detalle. Solo cuando no queda otra.";
+
+          /* --- retos --- */
+          var okExp = Math.abs(ev) <= 1;
+          setReto("reto-retrato", state.ap <= 1 && okExp && state.escena !== "noche");
+          setReto("reto-congela", state.tv >= 4 && okExp && state.escena !== "noche");
+          setReto("reto-noche", state.escena === "noche" && state.iso <= 4 && okExp);
+        }
+        function setReto(id, done){
+          var el = $(id);
+          el.classList.toggle("done", done);
+          el.querySelector(".estado").textContent = done ? "✓ ¡Logrado! Así se ve en la foto de arriba" : "Todavía no · ajusta los controles";
+        }
+
+        /* --- cambios con compensación opcional --- */
+        function setControl(which, idx){
+          idx = Math.max(0, Math.min(6, idx));
+          var lock = $("lockExp").checked;
+          var old = state[which];
+          var delta = idx - old; if (delta === 0) { render(); return; }
+          state[which] = idx;
+          if (lock){
+            // cuánto cambió la luz con este movimiento
+            var lightDelta = which === "iso" ? delta : -delta;
+            var restan = -lightDelta;
+            var orden = which === "ap" ? ["tv","iso"] : which === "tv" ? ["ap","iso"] : ["ap","tv"];
+            for (var i = 0; i < orden.length && restan !== 0; i++){
+              var k = orden[i];
+              // para ap/tv, subir el índice = menos luz; para iso, subir = más luz
+              var paso = k === "iso" ? restan : -restan;
+              var nuevo = Math.max(0, Math.min(6, state[k] + paso));
+              var aplicado = nuevo - state[k];
+              restan -= (k === "iso" ? aplicado : -aplicado);
+              state[k] = nuevo;
+            }
+          }
+          render();
+        }
+        apRange.addEventListener("input", function(){ setControl("ap", +apRange.value); });
+        tvRange.addEventListener("input", function(){ setControl("tv", +tvRange.value); });
+        isoRange.addEventListener("input", function(){ setControl("iso", +isoRange.value); });
+        document.querySelectorAll(".step-btn").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var parts = btn.getAttribute("data-step").split(":");
+            var k = parts[0], d = +parts[1];
+            // En apertura/velocidad el "+" del botón significa "más luz": abrir / más lenta
+            var idxDelta = (k === "iso") ? d : -d;
+            setControl(k, state[k] + idxDelta);
+          });
+        });
+
+        /* --- escenas --- */
+        function setEscena(nombre){
+          state.escena = nombre;
+          document.querySelectorAll(".escena-btn").forEach(function(b){
+            b.setAttribute("aria-pressed", b.getAttribute("data-escena") === nombre ? "true" : "false");
+          });
+          render();
+        }
+        document.querySelectorAll(".escena-btn").forEach(function(b){
+          b.addEventListener("click", function(){ setEscena(b.getAttribute("data-escena")); });
+        });
+
+        /* --- presets --- */
+        var PRESETS = {
+          retrato: { ap:0, tv:6, iso:0, escena:"dia" },
+          deporte: { ap:2, tv:5, iso:1, escena:"dia" },
+          paisaje: { ap:6, tv:2, iso:2, escena:"dia" },
+          barrido: { ap:5, tv:1, iso:0, escena:"dia" },
+          base:    { ap:3, tv:3, iso:0, escena:"dia" }
+        };
+        document.querySelectorAll(".preset-btn").forEach(function(b){
+          b.addEventListener("click", function(){
+            var p = PRESETS[b.getAttribute("data-preset")];
+            state.ap=p.ap; state.tv=p.tv; state.iso=p.iso;
+            setEscena(p.escena);
+            document.getElementById("visor").scrollIntoView({ behavior:"smooth", block:"center" });
+          });
+        });
+
+        /* --- retos: preparar escena --- */
+        document.querySelectorAll(".reto-btn").forEach(function(b){
+          b.addEventListener("click", function(){
+            var r = b.getAttribute("data-reto");
+            if (r === "noche"){ setEscena("noche"); }
+            else { setEscena("dia"); }
+            document.getElementById("visor").scrollIntoView({ behavior:"smooth", block:"center" });
+          });
+        });
+
+        /* --- explicación del triángulo --- */
+        var EXPLICA = {
+          ap: { t:"Apertura — el tamaño del hueco",
+            h:"<p>Es el agujero del lente por donde pasa la luz, y se mide en números f/. Aquí está el truco que más confunde al principio: <strong>el número más chiquito es el hueco más grande</strong>. f/1.8 es una puerta abierta de par en par; f/16 es un huequito.</p><p>Su efecto secundario es la <strong>profundidad de campo</strong>: con el hueco grande, solo una franja finita queda nítida y el fondo se derrite (el bokeh de los retratos). Con el hueco chiquito, queda nítido casi todo, de cerca a lejos.</p>",
+            e:"En el laboratorio: baja a <strong>f/1.8</strong> y mira cómo el café y los edificios se desenfocan mientras la modelo sigue clavada." },
+          tv: { t:"Velocidad — cuánto tiempo dura el trago de luz",
+            h:"<p>Es el tiempo que el obturador queda abierto: 1/8000 de segundo es un parpadeo; 1/2 segundo es una eternidad. <strong>Más tiempo = más luz, pero todo lo que se mueva sale barrido.</strong></p><p>Su efecto secundario es el <strong>movimiento</strong>: velocidad rápida congela (deportes, mascotas, niños); velocidad lenta pinta estelas y barridos artísticos. Y ojo: a pulso, por debajo de 1/60 tu propia mano también se mueve.</p>",
+            e:"En el laboratorio: baja a <strong>1/2 s</strong> y el ciclista se vuelve una estela; sube a <strong>1/2000</strong> y queda congelado a mitad de pedalada." },
+          iso: { t:"ISO — qué tan sensible es el sensor",
+            h:"<p>Es la sensibilidad del sensor a la luz. Subirlo no deja entrar más luz: hace que la cámara <strong>aproveche más la poquita que hay</strong>. Por eso es el salvavidas de noche.</p><p>Su efecto secundario es el <strong>ruido</strong>: ese granito que aparece en las sombras. Hasta ISO 800 casi no se nota en una Canon moderna; en 3200–6400 ya se come el detalle fino de la piel y el pelo.</p>",
+            e:"En el laboratorio: pasa a la escena de <strong>noche</strong> y sube el ISO paso a paso — la foto se aclara, pero mira cómo crece el granito." }
+        };
+        function showExplica(k){
+          var x = EXPLICA[k];
+          $("explainBox").innerHTML = "<h3>" + x.t + "</h3>" + x.h + '<p class="ejemplo">' + x.e + "</p>";
+          document.querySelectorAll(".tri-node").forEach(function(n){
+            n.querySelector("circle").setAttribute("stroke", n.getAttribute("data-explica") === k ? "var(--ink)" : "none");
+            n.querySelector("circle").setAttribute("stroke-width", n.getAttribute("data-explica") === k ? "3.5" : "0");
+          });
+        }
+        document.querySelectorAll(".tri-node").forEach(function(n){
+          var k = n.getAttribute("data-explica");
+          n.addEventListener("click", function(){ showExplica(k); });
+          n.addEventListener("keydown", function(ev){ if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); showExplica(k); } });
+        });
+
+        showExplica("ap");
+        render();
+      })();
+    </script>
+  <script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+</script>
+</body>
+</html>
