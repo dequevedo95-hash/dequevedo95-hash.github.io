@@ -72,8 +72,17 @@
     <p>Responde como eres de verdad, no como quisieras ser. No hay respuestas buenas ni malas.</p>
   </header>
 
+  <!-- Inicio -->
+  <section id="inicio" class="tarjeta">
+    <div class="pregunta">Antes de empezar, ¿cómo te llamas?</div>
+    <p style="color:var(--tinta-suave);margin-bottom:14px">Al final del test podrás enviar tu resultado por WhatsApp a la persona que te lo compartió, y así sabrá qué te salió.</p>
+    <input id="nombre" type="text" placeholder="Tu nombre" autocomplete="name"
+      style="width:100%;padding:14px 16px;font-size:1rem;border:1.5px solid var(--linea);border-radius:14px;background:var(--marfil);color:var(--tinta);font-family:inherit;margin-bottom:12px">
+    <button class="btn btn-principal" id="btn-empezar" type="button" style="width:100%">Empezar el test</button>
+  </section>
+
   <!-- Quiz -->
-  <section id="quiz" class="tarjeta">
+  <section id="quiz" class="tarjeta oculto">
     <div class="progreso"><div id="barra"></div></div>
     <div class="paso" id="paso"></div>
     <div class="pregunta" id="pregunta"></div>
@@ -97,7 +106,7 @@
     </div>
     <div class="barras" id="barras"></div>
     <div class="botones">
-      <a class="btn btn-wa" id="btn-wa" href="#" target="_blank" rel="noopener">Compartir mi resultado por WhatsApp</a>
+      <a class="btn btn-wa" id="btn-wa" href="#" target="_blank" rel="noopener">Enviar mi resultado por WhatsApp</a>
       <button class="btn btn-suave" id="btn-reiniciar" type="button">Hacer el test de nuevo</button>
     </div>
   </section>
@@ -288,8 +297,12 @@ function mostrarResultado(){
     barras.appendChild(fila);
     setTimeout(function(){ relleno.style.width = (puntos[k] / PREGUNTAS.length * 100) + '%'; }, 50);
   });
-  var texto = 'Hice el test de temperamentos y salí ' + primero.nombre + ', con un toque de ' + segundo.nombre.toLowerCase() + '. Hazlo tú y dime qué te sale: ' + location.href;
-  document.getElementById('btn-wa').href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  var nombre = (document.getElementById('nombre').value || '').trim();
+  var quien = nombre ? ('Soy ' + nombre + '. ') : '';
+  var texto = quien + 'Hice el test de temperamentos y salí ' + primero.nombre +
+    ', con un toque de ' + segundo.nombre.toLowerCase() + '. Mis puntos: Sanguíneo ' + puntos.S +
+    ', Colérico ' + puntos.C + ', Melancólico ' + puntos.M + ', Flemático ' + puntos.F + '.';
+  document.getElementById('btn-wa').href = 'https://wa.me/19177445155?text=' + encodeURIComponent(texto);
   document.getElementById('resultado').classList.remove('oculto');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -302,7 +315,12 @@ document.getElementById('btn-reiniciar').addEventListener('click', function(){
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-mostrarPregunta();
+document.getElementById('btn-empezar').addEventListener('click', function(){
+  document.getElementById('inicio').classList.add('oculto');
+  document.getElementById('quiz').classList.remove('oculto');
+  mostrarPregunta();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 </script>
 </body>
 </html>
