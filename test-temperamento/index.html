@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>¿Qué temperamento tienes? · Test</title>
+<meta name="description" content="Test de 20 preguntas para descubrir tu temperamento principal: sanguíneo, colérico, melancólico o flemático.">
+<meta name="theme-color" content="#2A2521">
+<style>
+  :root{
+    --marfil:#FAF6EE; --superficie:#FFFDF8; --tinta:#2A2521; --tinta-suave:#6B6156;
+    --terracota:#C06B47; --terracota-osc:#9E5233; --arena:#EADFC8; --linea:#E3D9C6;
+    --sang:#D97706; --col:#B3402A; --mel:#4A5D8A; --flem:#5B7A5E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--marfil); color:var(--tinta); line-height:1.55;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:20px 16px 40px;
+  }
+  .contenedor{width:100%; max-width:560px}
+  header{text-align:center; margin:12px 0 22px}
+  header .kicker{font-size:.78rem; letter-spacing:.22em; text-transform:uppercase; color:var(--terracota); font-weight:700}
+  header h1{font-family:Georgia,"Times New Roman",serif; font-weight:600; font-size:2rem; line-height:1.15; margin-top:6px}
+  header p{color:var(--tinta-suave); margin-top:8px; font-size:.98rem}
+  .tarjeta{background:var(--superficie); border:1px solid var(--linea); border-radius:18px; padding:22px 20px; box-shadow:0 6px 24px rgba(42,37,33,.06)}
+  .progreso{height:8px; background:var(--arena); border-radius:99px; overflow:hidden; margin-bottom:8px}
+  .progreso > div{height:100%; width:0%; background:var(--terracota); border-radius:99px; transition:width .35s ease}
+  .paso{font-size:.82rem; color:var(--tinta-suave); text-align:right; margin-bottom:14px}
+  .pregunta{font-family:Georgia,"Times New Roman",serif; font-size:1.28rem; line-height:1.3; margin-bottom:16px}
+  .opciones{display:flex; flex-direction:column; gap:10px}
+  .opcion{
+    text-align:left; width:100%; background:var(--marfil); border:1.5px solid var(--linea);
+    border-radius:14px; padding:14px 16px; font-size:1rem; color:var(--tinta); cursor:pointer;
+    transition:border-color .15s, background .15s, transform .05s; font-family:inherit; line-height:1.4;
+  }
+  .opcion:hover{border-color:var(--terracota)}
+  .opcion:active{transform:scale(.99); background:var(--arena)}
+  .nota{margin-top:18px; font-size:.85rem; color:var(--tinta-suave); text-align:center}
+  .oculto{display:none !important}
+  /* Resultado */
+  .res-tipo{font-family:Georgia,"Times New Roman",serif; font-size:2.1rem; line-height:1.1; text-align:center; margin-top:4px}
+  .res-sub{text-align:center; color:var(--tinta-suave); margin-top:6px}
+  .res-desc{margin-top:16px; font-size:1rem}
+  .res-bloque{margin-top:16px}
+  .res-bloque h3{font-size:.8rem; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px}
+  .res-bloque ul{padding-left:20px}
+  .res-bloque li{margin:3px 0}
+  .barras{margin-top:20px; display:flex; flex-direction:column; gap:9px}
+  .barra-fila{display:grid; grid-template-columns:96px 1fr 30px; align-items:center; gap:10px; font-size:.9rem}
+  .barra-via{background:var(--arena); border-radius:99px; height:10px; overflow:hidden}
+  .barra-relleno{height:100%; border-radius:99px; width:0%; transition:width .6s ease}
+  .botones{display:flex; flex-direction:column; gap:10px; margin-top:24px}
+  .btn{
+    display:block; text-align:center; text-decoration:none; border-radius:14px; padding:14px 18px;
+    font-size:1rem; font-weight:600; cursor:pointer; border:1.5px solid transparent; font-family:inherit;
+  }
+  .btn-principal{background:var(--terracota); color:#fff}
+  .btn-principal:hover{background:var(--terracota-osc)}
+  .btn-suave{background:transparent; color:var(--tinta); border-color:var(--linea)}
+  .btn-wa{background:#25D366; color:#10370F}
+  footer{margin-top:26px; text-align:center; font-size:.8rem; color:var(--tinta-suave); max-width:560px}
+</style>
+</head>
+<body>
+<div class="contenedor">
+  <header>
+    <div class="kicker">Test · 20 preguntas</div>
+    <h1>¿Qué temperamento tienes?</h1>
+    <p>Responde como eres de verdad, no como quisieras ser. No hay respuestas buenas ni malas.</p>
+  </header>
+
+  <!-- Quiz -->
+  <section id="quiz" class="tarjeta">
+    <div class="progreso"><div id="barra"></div></div>
+    <div class="paso" id="paso"></div>
+    <div class="pregunta" id="pregunta"></div>
+    <div class="opciones" id="opciones"></div>
+    <p class="nota">Elige la opción que más se parece a ti la mayoría de las veces.</p>
+  </section>
+
+  <!-- Resultado -->
+  <section id="resultado" class="tarjeta oculto">
+    <div class="kicker" style="text-align:center;font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;color:var(--terracota);font-weight:700">Tu temperamento principal es</div>
+    <div class="res-tipo" id="res-tipo"></div>
+    <p class="res-sub" id="res-sub"></p>
+    <p class="res-desc" id="res-desc"></p>
+    <div class="res-bloque">
+      <h3 style="color:var(--terracota-osc)">Tus fuerzas</h3>
+      <ul id="res-fuerzas"></ul>
+    </div>
+    <div class="res-bloque">
+      <h3 style="color:var(--terracota-osc)">Lo que te toca cuidar</h3>
+      <ul id="res-cuidar"></ul>
+    </div>
+    <div class="barras" id="barras"></div>
+    <div class="botones">
+      <a class="btn btn-wa" id="btn-wa" href="#" target="_blank" rel="noopener">Compartir mi resultado por WhatsApp</a>
+      <button class="btn btn-suave" id="btn-reiniciar" type="button">Hacer el test de nuevo</button>
+    </div>
+  </section>
+
+  <footer>
+    Este test es una guía de autoconocimiento basada en los cuatro temperamentos clásicos
+    (sanguíneo, colérico, melancólico y flemático). Sirve para conocerte mejor;
+    no es un diagnóstico médico ni psicológico.
+  </footer>
+</div>
+
+<script>
+var PREGUNTAS = [
+  { q: "En una reunión con amigos, normalmente tú…",
+    ops: [ ["S","Cuentas historias y animas el ambiente."],
+           ["C","Terminas organizando qué se hace y a qué hora."],
+           ["M","Escuchas más de lo que hablas y observas a todos."],
+           ["F","Estás tranquilo y sigues el plan que salga."] ] },
+  { q: "Cuando tienes un problema grande…",
+    ops: [ ["C","Actúas de inmediato; el resto lo resuelves en el camino."],
+           ["M","Lo analizas por todos lados antes de moverte."],
+           ["F","Lo tomas con calma, paso a paso."],
+           ["S","Lo comentas con alguien y buscas apoyo."] ] },
+  { q: "Tu ritmo de trabajo es…",
+    ops: [ ["S","Rápido cuando algo te entusiasma; irregular si te aburre."],
+           ["F","Lento pero constante, sin prisa."],
+           ["C","Rápido y directo al resultado."],
+           ["M","Cuidadoso, con cada detalle revisado."] ] },
+  { q: "Lo que más te molesta es…",
+    ops: [ ["M","El desorden y la improvisación."],
+           ["C","La lentitud y la indecisión de los demás."],
+           ["S","La monotonía y quedarte fuera de lo que está pasando."],
+           ["F","Los conflictos y las tensiones."] ] },
+  { q: "Cuando te enojas…",
+    ops: [ ["F","Te callas y te alejas hasta calmarte."],
+           ["S","Explotas en el momento y a los cinco minutos ya se te pasó."],
+           ["C","Lo dices directo, a veces más fuerte de lo que querías."],
+           ["M","Te lo guardas y le sigues dando vueltas días después."] ] },
+  { q: "Al tomar una decisión importante…",
+    ops: [ ["C","Decides rápido y asumes las consecuencias."],
+           ["M","Haces tu lista de pros y contras y lo piensas mucho."],
+           ["S","Te dejas llevar por lo que sientes en el momento."],
+           ["F","Prefieres esperar y ver cómo se acomoda todo."] ] },
+  { q: "En un equipo, tu papel natural es…",
+    ops: [ ["M","El que revisa la calidad y detecta los errores."],
+           ["S","El que motiva y mantiene el ánimo del grupo."],
+           ["F","El que media cuando hay roces."],
+           ["C","El que dirige y pone las metas."] ] },
+  { q: "Tu relación con la rutina es…",
+    ops: [ ["F","Te da paz; te gusta lo conocido."],
+           ["M","Te funciona si está bien organizada."],
+           ["S","Te aburre rápido; necesitas novedad."],
+           ["C","La aceptas si sirve para lograr algo."] ] },
+  { q: "Cuando alguien te critica…",
+    ops: [ ["M","Lo analizas mucho y te cuesta soltarlo."],
+           ["S","Te duele en el momento, pero lo olvidas pronto."],
+           ["C","Respondes y defiendes tu punto."],
+           ["F","Escuchas en silencio, aunque por dentro te afecte."] ] },
+  { q: "Tu espacio personal tiende a estar…",
+    ops: [ ["S","Con vida: cosas por todas partes, a tu manera."],
+           ["M","Ordenado, cada cosa en su lugar."],
+           ["F","Sencillo y cómodo, sin complicaciones."],
+           ["C","Funcional, pensado para lo que necesitas hacer."] ] },
+  { q: "En la amistad y el amor eres…",
+    ops: [ ["C","Intenso y protector; te gusta llevar la iniciativa."],
+           ["F","Leal y estable; estás siempre, sin drama."],
+           ["S","Cariñoso, expresivo y muy social."],
+           ["M","Reservado; entregas mucho, pero a pocas personas."] ] },
+  { q: "Tu mayor fortaleza es…",
+    ops: [ ["M","La profundidad y el cuidado en los detalles."],
+           ["C","La determinación para lograr lo que te propones."],
+           ["S","El carisma y la facilidad para conectar con la gente."],
+           ["F","La paciencia y la calma bajo presión."] ] },
+  { q: "Tu punto débil más frecuente es…",
+    ops: [ ["S","Empezar muchas cosas y terminar pocas."],
+           ["F","Dejar las cosas para después."],
+           ["M","Exigirte demasiado y preocuparte de más."],
+           ["C","La impaciencia y querer controlarlo todo."] ] },
+  { q: "Ante un plan improvisado de último minuto…",
+    ops: [ ["S","¡Vamos! Te encanta la aventura."],
+           ["C","Vas si vale la pena, pero prefieres decidir tú."],
+           ["F","Vas tranquilo; te adaptas."],
+           ["M","Te cuesta; prefieres saber antes qué va a pasar."] ] },
+  { q: "Cuando hablas, sueles…",
+    ops: [ ["C","Ir al grano, sin rodeos."],
+           ["S","Hablar bastante, con gestos y anécdotas."],
+           ["M","Pensar antes de hablar y medir tus palabras."],
+           ["F","Hablar poco y en tono suave."] ] },
+  { q: "El dinero para ti es…",
+    ops: [ ["F","Seguridad: prefieres ahorrar y estar tranquilo."],
+           ["S","Para disfrutarlo y compartir momentos."],
+           ["C","Una herramienta para crecer y lograr más."],
+           ["M","Algo que se administra con cuidado y previsión."] ] },
+  { q: "Si un proyecto se atrasa…",
+    ops: [ ["M","Revisas qué falló y cómo evitarlo la próxima vez."],
+           ["C","Presionas hasta que se cumpla."],
+           ["F","Esperas y ajustas sin estresarte."],
+           ["S","Pierdes el interés y te vas a otra cosa."] ] },
+  { q: "Te recarga la energía…",
+    ops: [ ["S","Estar con gente, salir y conversar."],
+           ["M","Tu espacio, el silencio y tiempo para pensar."],
+           ["C","Lograr una meta y sentir que avanzas."],
+           ["F","Descansar sin demandas ni apuros."] ] },
+  { q: "En una discusión buscas…",
+    ops: [ ["C","Dejar claro tu punto."],
+           ["F","Que todo quede en paz lo antes posible."],
+           ["M","Entender a fondo quién tiene la razón y por qué."],
+           ["S","Bajar la tensión, hasta con un chiste."] ] },
+  { q: "La frase que más te describe es…",
+    ops: [ ["S","«La vida es para disfrutarla»."],
+           ["C","«Si hay que hacerlo, lo hago yo»."],
+           ["M","«Las cosas bien hechas, o no se hacen»."],
+           ["F","«Todo con calma se resuelve»."] ] }
+];
+
+var TIPOS = {
+  S: { nombre: "Sanguíneo", color: getComputedStyle(document.documentElement).getPropertyValue('--sang'),
+       desc: "Eres energía social: entusiasta, expresivo y optimista. Conectas fácil con la gente, te adaptas rápido y le pones ánimo a cualquier ambiente. Tu reto no es arrancar, es sostener: cuando algo se vuelve rutina, tu interés se va a otra parte.",
+       fuerzas: ["Carisma natural y facilidad para hacer amigos", "Optimismo que levanta al grupo", "Creatividad e improvisación"],
+       cuidar: ["Terminar lo que empiezas", "El orden y la constancia en lo cotidiano", "Pensar antes de prometer"] },
+  C: { nombre: "Colérico", color: getComputedStyle(document.documentElement).getPropertyValue('--col'),
+       desc: "Eres acción y resultado: decidido, directo y con una voluntad fuerte. Ves lo que hay que hacer y lo haces, y la gente termina siguiéndote. Tu reto es el modo: la misma fuerza que te hace lograr puede atropellar si no la mides.",
+       fuerzas: ["Determinación para cumplir metas", "Liderazgo natural en los momentos difíciles", "Rapidez para decidir y actuar"],
+       cuidar: ["La impaciencia con los ritmos de otros", "Escuchar antes de responder", "No querer controlarlo todo"] },
+  M: { nombre: "Melancólico", color: getComputedStyle(document.documentElement).getPropertyValue('--mel'),
+       desc: "Eres profundidad y detalle: analítico, sensible y con un estándar alto. Piensas antes de actuar, notas lo que otros no ven y tus trabajos se reconocen por la calidad. Tu reto es no quedarte atrapado en tu cabeza: ni todo tiene que ser perfecto, ni todo merece días de vueltas.",
+       fuerzas: ["Ojo para el detalle y la calidad", "Lealtad profunda con los tuyos", "Capacidad de análisis y reflexión"],
+       cuidar: ["El perfeccionismo que retrasa entregas", "Preocuparte de más por lo que no controlas", "Guardarte lo que sientes hasta explotar"] },
+  F: { nombre: "Flemático", color: getComputedStyle(document.documentElement).getPropertyValue('--flem'),
+       desc: "Eres calma y constancia: paciente, estable y difícil de sacar de tu centro. La gente confía en ti porque no dramatizas y porque estás. Tu reto es el arranque: puedes quedarte esperando el momento perfecto mientras las oportunidades pasan.",
+       fuerzas: ["Paciencia y calma bajo presión", "Constancia: terminas lo que empiezas, a tu ritmo", "Talento para mediar y bajar conflictos"],
+       cuidar: ["Dejar las decisiones para después", "Decir lo que necesitas en vez de callarlo", "Resistirte a los cambios necesarios"] }
+};
+
+var indice = 0;
+var puntos = { S:0, C:0, M:0, F:0 };
+var elPregunta = document.getElementById('pregunta');
+var elOpciones = document.getElementById('opciones');
+var elBarra = document.getElementById('barra');
+var elPaso = document.getElementById('paso');
+
+function mostrarPregunta(){
+  var p = PREGUNTAS[indice];
+  elBarra.style.width = (indice / PREGUNTAS.length * 100) + '%';
+  elPaso.textContent = 'Pregunta ' + (indice + 1) + ' de ' + PREGUNTAS.length;
+  elPregunta.textContent = p.q;
+  elOpciones.innerHTML = '';
+  p.ops.forEach(function(op){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opcion';
+    b.textContent = op[1];
+    b.addEventListener('click', function(){ responder(op[0]); });
+    elOpciones.appendChild(b);
+  });
+}
+
+function responder(tipo){
+  puntos[tipo]++;
+  indice++;
+  if (indice < PREGUNTAS.length){ mostrarPregunta(); }
+  else { mostrarResultado(); }
+}
+
+function mostrarResultado(){
+  document.getElementById('quiz').classList.add('oculto');
+  var orden = Object.keys(puntos).sort(function(a,b){ return puntos[b] - puntos[a]; });
+  var primero = TIPOS[orden[0]];
+  var segundo = TIPOS[orden[1]];
+  document.getElementById('res-tipo').textContent = primero.nombre;
+  document.getElementById('res-tipo').style.color = primero.color;
+  document.getElementById('res-sub').textContent = 'Con un toque de ' + segundo.nombre.toLowerCase() + ' (' + puntos[orden[0]] + ' de 20 respuestas en tu tipo principal)';
+  document.getElementById('res-desc').textContent = primero.desc;
+  var ul1 = document.getElementById('res-fuerzas'); ul1.innerHTML = '';
+  primero.fuerzas.forEach(function(f){ var li = document.createElement('li'); li.textContent = f; ul1.appendChild(li); });
+  var ul2 = document.getElementById('res-cuidar'); ul2.innerHTML = '';
+  primero.cuidar.forEach(function(f){ var li = document.createElement('li'); li.textContent = f; ul2.appendChild(li); });
+  var barras = document.getElementById('barras'); barras.innerHTML = '';
+  orden.forEach(function(k){
+    var fila = document.createElement('div'); fila.className = 'barra-fila';
+    var nombre = document.createElement('span'); nombre.textContent = TIPOS[k].nombre;
+    var via = document.createElement('div'); via.className = 'barra-via';
+    var relleno = document.createElement('div'); relleno.className = 'barra-relleno';
+    relleno.style.background = TIPOS[k].color;
+    via.appendChild(relleno);
+    var num = document.createElement('span'); num.textContent = puntos[k];
+    fila.appendChild(nombre); fila.appendChild(via); fila.appendChild(num);
+    barras.appendChild(fila);
+    setTimeout(function(){ relleno.style.width = (puntos[k] / PREGUNTAS.length * 100) + '%'; }, 50);
+  });
+  var texto = 'Hice el test de temperamentos y salí ' + primero.nombre + ', con un toque de ' + segundo.nombre.toLowerCase() + '. Hazlo tú y dime qué te sale: ' + location.href;
+  document.getElementById('btn-wa').href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  document.getElementById('resultado').classList.remove('oculto');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('btn-reiniciar').addEventListener('click', function(){
+  indice = 0; puntos = { S:0, C:0, M:0, F:0 };
+  document.getElementById('resultado').classList.add('oculto');
+  document.getElementById('quiz').classList.remove('oculto');
+  mostrarPregunta();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+mostrarPregunta();
+</script>
+</body>
+</html>
