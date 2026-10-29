@@ -67,6 +67,7 @@ details.sec .in li{margin:4px 0}
 </header>
 
 <main id="view-hoy">
+  <button id="backtoday" class="hide" style="border:1px solid var(--linea);background:var(--papel);border-radius:999px;padding:7px 14px;font-weight:650;font-size:14.5px;margin:0 0 8px">↩ Volver a hoy</button>
   <div class="tabs" id="sectabs">
     <button data-s="manana">Mañana</button>
     <button data-s="tarde">Tarde</button>
@@ -250,6 +251,7 @@ function render(){
   const d=di(ms);
   $("#fase").textContent=d<0?"La rutina empieza el miércoles 28 de octubre":adapt(ms)?"Fase de adaptación · día "+(d+1)+" de 28":"Fase normal · semana "+(Math.floor(d/7)+1);
   document.querySelectorAll("#sectabs button").forEach(b=>b.classList.toggle("on",b.dataset.s===s));
+  $("#backtoday").classList.toggle("hide",ms===autoSection().ms);
   $("#skinbox").classList.toggle("hide",s!=="noche");
   const skinAll=load(LS_S,{}), skin=skinAll[dateKey(ms)]||"Bien";
   document.querySelectorAll("#skinchips button").forEach(b=>b.classList.toggle("on",b.dataset.v===skin));
@@ -271,7 +273,7 @@ function render(){
 }
 function renderWeek(){
   const c=chicago(); let monday=Date.UTC(c.y,c.m-1,c.d); monday-=( (wd(monday)+6)%7 )*DAY;
-  const box=$("#week"); box.innerHTML="";
+  const box=$("#week"); box.innerHTML='<p class="small" style="margin:2px 0 10px">Toca un día para ver su rutina completa.</p>';
   for(let i=0;i<7;i++){
     const ms=monday+i*DAY, d=di(ms), tags=[];
     if(d<0) tags.push("Empieza el mié 28");
@@ -285,7 +287,9 @@ function renderWeek(){
     }
     const card=document.createElement("div"); card.className="card";
     card.innerHTML='<div class="t"></div><div class="tags">'+tags.filter(Boolean).map(t=>'<span class="tag'+(t.includes("🟠")?" hot":"")+'">'+t.replace(" 🟠","")+'</span>').join("")+'</div>';
-    card.querySelector(".t").textContent=fmt(ms); box.appendChild(card);
+    card.querySelector(".t").textContent=fmt(ms)+" ›"; card.style.cursor="pointer";
+    card.addEventListener("click",()=>{cur={ms:ms,s:"manana"};view="hoy";render()});
+    box.appendChild(card);
   }
 }
 function renderRev(){
@@ -294,7 +298,8 @@ function renderRev(){
   const nx=revs.find(r=>r>=today);
   $("#nextrev").innerHTML="<b>Próxima revisión:</b> "+(nx?fmt(nx):"20 de enero de 2027 (la grande, ya pasó el ciclo)");
 }
-document.querySelectorAll("#sectabs button").forEach(b=>b.addEventListener("click",()=>{cur.s=b.dataset.s; if(b.dataset.s!=="noche"&&autoSection().s==="noche"&&chicago().h<5){cur.ms+=DAY} render()}));
+document.querySelectorAll("#sectabs button").forEach(b=>b.addEventListener("click",()=>{cur.s=b.dataset.s; render()}));
+$("#backtoday").addEventListener("click",()=>{cur=autoSection();render()});
 document.querySelectorAll("#skinchips button").forEach(b=>b.addEventListener("click",()=>{const all=load(LS_S,{});all[dateKey(cur.ms)]=b.dataset.v;save(LS_S,all);render()}));
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{view=b.dataset.v;render()}));
 document.querySelectorAll("details.sec summary").forEach(sm=>sm.addEventListener("click",()=>{const p=sm.querySelector(".p");setTimeout(()=>{p.textContent=sm.parentElement.open?"−":"+"},0)}));

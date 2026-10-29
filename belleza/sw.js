@@ -1,4 +1,4 @@
-const CACHE = 'belleza-v1';
+const CACHE = 'belleza-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {
