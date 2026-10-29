@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rutinas de belleza</title>
+<meta name="theme-color" content="#2A2521">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Belleza">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{--marfil:#FAF6EE;--papel:#FFFDF8;--arena:#EADFC8;--terra:#C06B47;--terra2:#9E5233;--carbon:#2A2521;--suave:#6f6459;--linea:#e7dcc8;--ok:#4d7c4d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--marfil);color:var(--carbon);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.45;padding:18px 16px 90px}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:27px;margin:2px 0 2px}
+.sub{color:var(--suave);font-size:14.5px;margin:0 0 4px}
+.fase{color:var(--terra2);font-size:13.5px;font-weight:600;margin:0 0 12px}
+.tabs{display:flex;gap:8px;margin:10px 0 14px}
+.tabs button{flex:1;border:1px solid var(--linea);background:var(--papel);color:var(--carbon);border-radius:999px;padding:9px 0;font-size:15.5px;font-weight:600}
+.tabs button.on{background:var(--carbon);color:var(--marfil);border-color:var(--carbon)}
+.prog{height:8px;background:var(--arena);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.prog i{display:block;height:100%;background:var(--terra);width:0;transition:width .25s}
+.progtxt{font-size:13px;color:var(--suave);margin:0 0 12px}
+.step{display:flex;gap:12px;align-items:flex-start;background:var(--papel);border:1px solid var(--linea);border-radius:16px;padding:14px 14px;margin:0 0 10px}
+.step input{width:26px;height:26px;accent-color:var(--ok);flex:0 0 auto;margin-top:2px}
+.step .tx{flex:1;min-width:0}
+.step .n{font-size:18.5px;font-weight:650;line-height:1.25}
+.step.done .n{color:var(--suave);text-decoration:line-through}
+.step .c{color:var(--suave);font-size:14.5px;margin-top:1px}
+.step .d{display:none;margin-top:8px;font-size:15px;color:#463d33;background:var(--marfil);border:1px solid var(--linea);border-radius:12px;padding:10px 12px}
+.step.open .d{display:block}
+.plus{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--linea);background:var(--marfil);color:var(--terra2);font-size:21px;line-height:1;font-weight:600}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.chips button{border:1px solid var(--linea);background:var(--papel);border-radius:999px;padding:8px 14px;font-size:15px;font-weight:600;color:var(--carbon)}
+.chips button.on{background:var(--terra);border-color:var(--terra);color:#fff}
+.band{background:#f7e8e2;border:1px solid #e3b7a6;color:#71351f;border-radius:14px;padding:11px 13px;font-size:15px;margin:0 0 12px}
+.card{background:var(--papel);border:1px solid var(--linea);border-radius:16px;padding:13px 14px;margin:0 0 10px}
+.card .t{font-weight:650;font-size:16.5px;text-transform:capitalize}
+.tags{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12.5px;background:var(--arena);border-radius:999px;padding:3px 9px;font-weight:600;color:#5b4a38}
+.tag.hot{background:var(--terra);color:#fff}
+details.sec{background:var(--papel);border:1px solid var(--linea);border-radius:16px;margin:0 0 10px;padding:0}
+details.sec summary{list-style:none;cursor:pointer;padding:14px;font-weight:650;font-size:16.5px;display:flex;justify-content:space-between;align-items:center}
+details.sec summary::-webkit-details-marker{display:none}
+details.sec summary .p{color:var(--terra2);font-size:21px;font-weight:600}
+details.sec .in{padding:0 14px 14px;font-size:15px;color:#463d33}
+details.sec .in p{margin:6px 0}
+details.sec .in li{margin:4px 0}
+.secT{font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--suave);margin:16px 0 8px}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--papel);border-top:1px solid var(--linea);display:flex;padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+.nav button{flex:1;background:none;border:none;font-size:15.5px;font-weight:650;color:var(--suave);padding:8px 0}
+.nav button.on{color:var(--terra2)}
+.hide{display:none}
+.small{font-size:13.5px;color:var(--suave)}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="titulo">Rutinas de belleza</h1>
+  <p class="sub" id="fecha">—</p>
+  <p class="fase" id="fase">—</p>
+</header>
+
+<main id="view-hoy">
+  <div class="tabs" id="sectabs">
+    <button data-s="manana">Mañana</button>
+    <button data-s="tarde">Tarde</button>
+    <button data-s="noche">Noche</button>
+  </div>
+  <div class="prog"><i id="bar"></i></div>
+  <p class="progtxt" id="progtxt"></p>
+  <div id="skinbox" class="hide">
+    <p class="secT">¿Tu piel hoy?</p>
+    <div class="chips" id="skinchips">
+      <button data-v="Bien">Bien</button>
+      <button data-v="Ardor">Ardor</button>
+      <button data-v="Rojez">Rojez</button>
+      <button data-v="Pelado">Pelado</button>
+    </div>
+    <div class="band hide" id="skinband">Hoy: pasa a reparación · Pausa activos 3–4 noches y vuelve solo cuando la piel esté tranquila.</div>
+  </div>
+  <div id="steps"></div>
+</main>
+
+<main id="view-semana" class="hide"><div id="week"></div></main>
+
+<main id="view-guia" class="hide">
+  <details class="sec"><summary>Guía · Dermaroller <span class="p">+</span></summary><div class="in">
+    <p>Miércoles en la noche, desde el 25/11/2026. Sustituye a esa noche. Solo si la piel está tranquila: sin brote inflamado, herida, quemadura ni irritación.</p>
+    <ul>
+      <li>Manos lavadas. Limpia con CeraVe Foaming y seca a toques.</li>
+      <li>Desinfecta la cabeza del roller con alcohol al 70% y deja secar. No lo compartas. Si una aguja está doblada, no lo uses.</li>
+      <li>Por zonas (frente, mejillas, nariz, mentón), sin presionar: 4 pasadas verticales, 4 horizontales y 4 diagonales, levantando el roller en cada cambio. Nunca en párpados ni labios.</li>
+      <li><b>Nunca sobre la mancha oscura de la mejilla derecha</b> hasta que un dermatólogo la vea en persona.</li>
+      <li>Después: Anua PDRN y la crema que toque. Vuelve a desinfectar el roller y guárdalo en su estuche.</li>
+      <li>Esa noche nada más: sin retinoide, ácidos, vitamina C, PanOxyl ni INIA.</li>
+    </ul></div></details>
+  <details class="sec"><summary>Guía · Dermapen <span class="p">+</span></summary><div class="in">
+    <p>Un domingo cada 4 semanas (6/12/2026, 3/1/2027, 31/1/2027…). Cartucho estéril nuevo cada vez; se abre en el momento y se desecha en un recipiente rígido.</p>
+    <ul>
+      <li><b>Cartucho de 36 agujas</b>: el de la sesión completa. El de 42 es el más suave. El de 12, solo localizado y con práctica.</li>
+      <li>Si hay brote inflamado, herpes, quemadura o irritación: se pospone.</li>
+      <li>Profundidades en casa: frente 0.25 mm, nariz 0.25 mm, mejillas 0.5 mm, mentón 0.5 mm. Sin pasar de ahí. Velocidad baja-media.</li>
+      <li>Suero deslizante: <b>una cápsula WNP</b> (solo se usan para esto), por zonas, reponiendo al secarse. Pasadas cortas sin presionar ni arrastrar en círculos. 10–15 minutos.</li>
+      <li>Saltar siempre la mancha oscura de la mejilla derecha.</li>
+      <li>Al terminar no laves hasta la mañana siguiente. Al día siguiente: enjuague suave, hidratante y SPF mineral obligatorio, sin sol directo ni gym fuerte o sauna.</li>
+      <li>Sábado anterior y lunes y martes siguientes: noches de reparación automáticas en la app.</li>
+    </ul></div></details>
+  <details class="sec"><summary>Seguridad <span class="p">+</span></summary><div class="in">
+    <p><b>Máscara LED:</b> autorizada por tu doctor para tu glaucoma congénito (28/10/2026). Úsala con los ojos cerrados, sobre piel limpia y seca, antes de cualquier producto. Si un día notas dolor ocular, halos, destellos o cambios de visión: suspéndela y avisa.</p>
+    <p><b>Chequeo antes de agujas o LED:</b> ¿brote inflamado? ¿herpes reciente? ¿herida o piel rota? ¿quemadura de sol? ¿ardor o pelado hoy? Si algo es sí: pospón y pasa a reparación.</p>
+    <p><b>Signos de alarma tras agujas:</b> rojez que pasa de 48–72 h, piel que se oscurece, dolor que crece, calor, hinchazón o secreción: para todo activo y consulta a un dermatólogo.</p>
+    <p><b>Regla de oro:</b> un activo fuerte por noche. Si la crema de siempre un día escuece, sobran activos: 5–7 días solo de reparación.</p>
+    <p>Esta app organiza tu rutina cosmética. No sustituye la valoración de un dermatólogo.</p>
+  </div></details>
+  <details class="sec"><summary>Revisiones y cambios <span class="p">+</span></summary><div class="in">
+    <p id="nextrev"><b>Próxima revisión:</b> —</p>
+    <p>Fotos de control (misma luz, frente y dos perfiles) y decisión: seguir igual o cambiar. Revisiones: 11/11 y 25/11/2026, 9/12 y 23/12/2026, 6/1/2027 y la grande el 20/1/2027.</p>
+    <p><b>Historial:</b> v1 plan original · v1.1 orden corregido (aparatos primero, un producto de ojos, una crema) · v2 evaluación científica con tus decisiones (LED autorizada por tu doctor, agujas en casa con protocolo, carga reducida, todo en rotación, adaptación de 4 semanas) · v2.1 WNP solo con el dermapen · v2.2 vista simple.</p>
+    <p><b>Al recomprar:</b> PanOxyl facial 4–5% (el 10% queda para cuerpo) y niacinamida 4–5%.</p>
+    <p><b>A valorar con dermatólogo:</b> la mancha oscura de la mejilla (verla con dermatoscopia antes de tratarla) y el ácido azelaico 15–20% para las marcas.</p>
+  </div></details>
+</main>
+
+<nav class="nav">
+  <button data-v="hoy" class="on">Hoy</button>
+  <button data-v="semana">Semana</button>
+  <button data-v="guia">Guía</button>
+</nav>
+
+<script>
+"use strict";
+const DAY=86400000, START=Date.UTC(2026,9,28), PEN0=Date.UTC(2026,11,6);
+const $=s=>document.querySelector(s);
+function chicago(){const p=new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",hour12:false}).formatToParts(new Date());const o={};p.forEach(x=>o[x.type]=x.value);return{y:+o.year,m:+o.month,d:+o.day,h:(+o.hour)%24}}
+function autoSection(){const c=chicago();let ms=Date.UTC(c.y,c.m-1,c.d);let s;if(c.h>=5&&c.h<12)s="manana";else if(c.h>=12&&c.h<19)s="tarde";else if(c.h>=19)s="noche";else{s="noche";ms-=DAY}return{ms,s}}
+const di=ms=>Math.round((ms-START)/DAY);
+const wd=ms=>new Date(ms).getUTCDay();
+const isPen=ms=>ms>=PEN0&&(ms-PEN0)%(28*DAY)===0;
+const adapt=ms=>{const d=di(ms);return d>=0&&d<28};
+function fmt(ms){let t=new Date(ms).toLocaleDateString("es-ES",{timeZone:"UTC",weekday:"long",day:"numeric",month:"long"});return t.charAt(0).toUpperCase()+t.slice(1)}
+function hydrator(ms){return [1,3,5,0].includes(wd(ms))?{n:"Anua PDRN Serum",c:"2–3 gotas · piel húmeda",d:"Suero hidratante y reparador (PDRN + hialurónico). Sobre la piel húmeda, antes de la crema."}:{n:"SkinMedica HA5",c:"una capa fina · piel húmeda",d:"Hidratante de ácido hialurónico. Sobre la piel húmeda, antes de la crema."}}
+function repairCream(ms){return Math.floor(di(ms)/7)%2===0?{n:"COSRX Snail 92",c:"capa fina · último paso",d:"Crema de mucina de caracol. Es la única crema de esta noche."}:{n:"SKIN1004 Centella Cream",c:"capa fina · último paso",d:"Crema calmante de centella. Es la única crema de esta noche."}}
+function morningSteps(ms){
+  const w=wd(ms),d=di(ms),st=[];
+  let cl;
+  if((w===2||w===6)&&!(adapt(ms)&&d<14&&w===2)) cl={n:"PanOxyl 10%",c:"en la ducha · 1–2 min",d:"Peróxido de benzoilo al 10% en lavado. Déjalo actuar 1–2 minutos y enjuaga bien. Mancha las toallas de color. También sirve para espalda y pecho."};
+  else if(w===3&&(Math.floor(d/7)%2===1)) cl={n:"SkinMedica AHA/BHA Cleanser",c:"limpieza profunda · hoy",d:"Limpiador exfoliante con ácidos, solo miércoles de semanas alternas. Masajea y enjuaga; hoy no hay otro exfoliante de mañana."};
+  else cl={n:"CeraVe Foaming Cleanser",c:"60 segundos · agua tibia",d:"Limpiador suave. Si amaneciste sin grasa ni sudor, basta enjuagar solo con agua."};
+  st.push(cl);
+  if([1,3,5,0].includes(w)&&!isPen(ms)) st.push({n:"Máscara LED TheraFace",c:"piel seca · programa completo",d:"Autorizada por tu doctor. Ojos cerrados, sobre la piel limpia y seca, antes de cualquier suero. Programa completo del equipo (aprox. 9 min). Suspéndela y avisa si notas dolor ocular o cambios de visión."});
+  st.push({n:"SPA LIFE Vitamin C",c:"3–4 gotas · cara y cuello",d:"Suero de vitamina C. Espera 1 minuto antes del siguiente paso. Se usa hasta acabarse; no se repone sin etiqueta verificable."});
+  st.push({n:"Caffeine Solution (ojos)",c:"1 gota · contorno externo",d:"The Ordinary Caffeine 5% + EGCG. Solo por fuera del ojo, con el dedo anular. Es el único producto de ojos del día."});
+  st.push(hydrator(ms));
+  st.push({n:"SkinMedica Rejuvenative",c:"capa fina",d:"La única crema de la mañana."});
+  const afterPen=isPen(ms-DAY);
+  st.push(afterPen?{n:"CeraVe Mineral SPF 50",c:"dos dedos · cara y cuello",d:"Hoy toca el mineral: es el día después del dermapen. Puede dejar velo blanco."}:{n:"Neutrogena Clear Face SPF 50",c:"dos dedos · cara y cuello",d:"Último paso de la mañana. Reaplicar cada 2 horas si estás al sol, en sesión exterior o manejando mucho."});
+  return st;
+}
+function afternoonSteps(ms){
+  const w=wd(ms),st=[
+   {n:"Reaplicar el SPF 50",c:"si hay sol · cada 2 h",d:"Solo si estás al aire libre, en sesión exterior o manejando. Dos dedos para cara y cuello."},
+   {n:"Bruma Mario Badescu",c:"opcional · si hay tirantez",d:"Refresca durante el día. Si un día escuece, se suspende: lleva fragancia."},
+   {n:"No tocarte la cara",c:"sobre todo la mejilla derecha",d:"Tocarte la marca es lo que más la oscurece."}];
+  if(w===1) st.push({n:"Puolern Body Scrub (ducha)",c:"espalda, pecho, hombros",d:"Exfoliante corporal AHA & BHA, 1 vez por semana. Nunca en la cara."});
+  if([2,4,6].includes(w)) st.push({n:"Glytone Spray 2%",c:"espalda y pecho · tras la ducha",d:"Ácido salicílico en spray. Deja secar antes de vestirte."});
+  else st.push({n:"CeraVe SA Lotion",c:"brazos · zonas ásperas",d:"Loción con salicílico para piel áspera. Hoy no hay spray en esa zona."});
+  st.push({n:"CeraVe Intensive Lotion",c:"resto del cuerpo",d:"Loción corporal de a diario."});
+  return st;
+}
+function nightKind(ms){
+  const w=wd(ms),d=di(ms);
+  if(d<0) return "pre";
+  if(isPen(ms)) return "pen";
+  if(isPen(ms+DAY)||isPen(ms-DAY)||isPen(ms-2*DAY)) return "repair";
+  if(adapt(ms)){
+    if(w===1||w===4) return "differin";
+    if(w===2&&d>=14) return "acid";
+    if(w===5) return "inia";
+    return "repair";
+  }
+  return {0:"repair",1:"differin",2:"acid",3:"roller",4:"differin",5:"inia",6:"differin"}[w];
+}
+function acidStep(ms){
+  const idx=Math.round((di(ms)-6)/7)-2;
+  return idx%2===0?{n:"Glycolic Acid 7%",c:"con algodón · frente, nariz, mejillas",d:"The Ordinary Glycolic Acid 7%. Con algodón, sin tocar barba ni contorno de ojos. Es la única noche de ácido de esta semana."}:{n:"Salicylic Acid 2%",c:"solo nariz y mejillas internas",d:"The Ordinary Salicylic Acid 2%, localizado donde están el poro y el punto negro. Es la única noche de ácido de esta semana."};
+}
+function nightSteps(ms){
+  const w=wd(ms),kind=nightKind(ms),st=[{n:"CeraVe Foaming Cleanser",c:"60 segundos",d:"Limpieza de la noche. Si el día fue de mucho protector, repite solo la zona T. Seca a toques."}];
+  const eye={n:"Instant Bright Eye Cream",c:"contorno · antes de la crema",d:"El único producto de ojos de la noche. La cafeína es solo de mañana."};
+  const nia={n:"Niacinamide 10% + Zinc",c:"2–3 gotas",d:"The Ordinary. Ayuda con marcas y grasa."};
+  if(kind==="differin"){
+    st.push(eye);
+    let dif={n:"Differin Gel 0.1%",c:"un chícharo · piel bien seca",d:"Adapaleno. Espera 2–3 min tras limpiar a que la piel seque del todo. Frente, nariz, mejillas sobre la barba y mentón. Evita ojos, aletas de la nariz y labios. Si hay un brote activo localizado, esta noche puedes sustituirlo por Biretix solo en esa zona."};
+    if(w===6){const idx=Math.round((di(ms)-3)/7);if(idx%2===1) dif={n:"celimax Retinal Shot",c:"hoy sustituye al Differin",d:"Retinal 0.1% en frente y mejillas, en lugar del Differin (sábado alterno). Sustituye, no se suma."};}
+    st.push(dif);
+    st.push(w===6?{n:"SKIN1004 Centella Cream",c:"capa fina · último paso",d:"La única crema de esta noche."}:{n:"COSRX Snail 92",c:"capa fina · último paso",d:"La única crema de esta noche. Si el Differin te irrita, técnica sándwich: esta misma crema antes y después de él."});
+  }else if(kind==="acid"){
+    st.push(acidStep(ms));
+    st.push({n:"Deja asentar",c:"1–2 minutos",d:"Solo deja que el ácido se asiente. No hace falta esperar 10 minutos: no tiene respaldo."});
+    st.push(nia); st.push(eye);
+    st.push({n:"SKIN1004 Centella Cream",c:"capa fina · último paso",d:"La única crema de esta noche."});
+  }else if(kind==="inia"){
+    const idx=Math.round((di(ms)-2)/7),modo=idx%2===0?"Lift":"Tighten";
+    st.push({n:"INIA · modo "+modo,c:"con su gel conductor · 10 min",d:"Un solo modo por día (Lift y Tighten nunca el mismo día), como dice su manual: con el gel conductor del equipo, nivel bajo. Hoy toca "+modo+"; la semana que viene, el otro."});
+    st.push({n:"INIA · Infuse con "+hydrator(ms).n,c:"el suero es la hidratación",d:"El modo Infuse trabaja con el suero puesto: este paso ES la hidratación de la noche. No se aplica otro suero hidratante antes ni se repite después."});
+    st.push(nia); st.push(eye);
+    st.push({n:"COSRX Snail 92",c:"capa fina · último paso",d:"La única crema de esta noche."});
+  }else if(kind==="roller"){
+    st.push({n:"Desinfecta el dermaroller",c:"alcohol 70% · deja secar",d:"Revisa que ninguna aguja esté doblada. No lo compartas."});
+    st.push({n:"Dermaroller 0.25 mm",c:"4 pasadas por zona · sin presionar",d:"Frente, mejillas, nariz y mentón: 4 verticales, 4 horizontales, 4 diagonales, levantándolo en cada cambio. Nunca en párpados ni labios. Salta la mancha oscura de la mejilla derecha. Solo si la piel está tranquila; si hay brote inflamado, se pospone."});
+    st.push({n:"Anua PDRN Serum",c:"enseguida · piel receptiva",d:"Justo después del roller. Sin cápsulas WNP: esas son solo del dermapen."});
+    st.push(repairCream(ms));
+  }else if(kind==="pen"){
+    st.push({n:"Revisa tu piel",c:"¿brote, herpes, irritación?",d:"Si hay brote inflamado, herpes, quemadura o irritación: se pospone. Salta siempre la mancha oscura de la mejilla derecha."});
+    st.push({n:"Cartucho estéril de 36",c:"nuevo · se abre ahora",d:"Cartucho de 36 agujas para la sesión completa. El de 42 es el más suave; el de 12, solo localizado y con práctica. Al terminar, deséchalo en un recipiente rígido."});
+    st.push({n:"Dermapen + cápsula WNP",c:"WNP = suero deslizante",d:"Abre una cápsula WNP y úsala como suero deslizante, por zonas. Profundidades: frente 0.25, nariz 0.25, mejillas 0.5, mentón 0.5 mm. Pasadas cortas sin presionar. 10–15 min. Rojez leve 24–48 h es lo esperado. No laves hasta mañana."});
+    st.push({n:"SKIN1004 Centella Cream",c:"capa fina · último paso",d:"La única crema de esta noche. Nada de retinoide, ácidos ni vitamina C."});
+  }else{ /* repair */
+    st.push(hydrator(ms)); st.push(nia); st.push(eye); st.push(repairCream(ms));
+  }
+  if((w===2||w===0)&&kind!=="pen"&&kind!=="roller") st.push({n:"SPA LIFE Retinol",c:"solo cuello y manos",d:"Retinol cosmético en cuello y manos, donde no va el Differin de la cara. Así se usa sin duplicar retinoide en la cara."});
+  return st;
+}
+function stepsFor(ms,s){return s==="manana"?morningSteps(ms):s==="tarde"?afternoonSteps(ms):nightSteps(ms)}
+function kindLabel(ms){return {differin:"Noche A · Differin",acid:"Noche B · Ácido",inia:"Noche C · Reparación + INIA",roller:"Noche · Dermaroller",pen:"Noche · Dermapen",repair:"Noche C · Reparación",pre:"Aún no empieza"}[nightKind(ms)]||""}
+</script>
+<script>
+"use strict";
+const LS_C="belleza-checks-v1", LS_S="belleza-skin-v1";
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let cur=autoSection(), view="hoy";
+function dateKey(ms){return new Date(ms).toISOString().slice(0,10)}
+function render(){
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+  $("#view-hoy").classList.toggle("hide",view!=="hoy");
+  $("#view-semana").classList.toggle("hide",view!=="semana");
+  $("#view-guia").classList.toggle("hide",view!=="guia");
+  if(view==="semana") renderWeek();
+  if(view==="guia") renderRev();
+  if(view!=="hoy") return;
+  const {ms,s}=cur;
+  $("#fecha").textContent=fmt(ms)+(s==="noche"?" · "+kindLabel(ms):"");
+  const d=di(ms);
+  $("#fase").textContent=d<0?"La rutina empieza el miércoles 28 de octubre":adapt(ms)?"Fase de adaptación · día "+(d+1)+" de 28":"Fase normal · semana "+(Math.floor(d/7)+1);
+  document.querySelectorAll("#sectabs button").forEach(b=>b.classList.toggle("on",b.dataset.s===s));
+  $("#skinbox").classList.toggle("hide",s!=="noche");
+  const skinAll=load(LS_S,{}), skin=skinAll[dateKey(ms)]||"Bien";
+  document.querySelectorAll("#skinchips button").forEach(b=>b.classList.toggle("on",b.dataset.v===skin));
+  $("#skinband").classList.toggle("hide",skin==="Bien");
+  const steps=nightKind(ms)==="pre"&&s==="noche"?[]:stepsFor(ms,s);
+  const all=load(LS_C,{}), key=dateKey(ms)+"|"+s, done=new Set(all[key]||[]);
+  const box=$("#steps"); box.innerHTML="";
+  if(!steps.length) box.innerHTML='<div class="card">La rutina empieza el miércoles 28 de octubre. Esa noche toca reparación.</div>';
+  steps.forEach((st,i)=>{
+    const div=document.createElement("div"); div.className="step"+(done.has(i)?" done":"");
+    div.innerHTML='<input type="checkbox" '+(done.has(i)?"checked":"")+'><div class="tx"><div class="n"></div><div class="c"></div><div class="d"></div></div><button class="plus">+</button>';
+    div.querySelector(".n").textContent=st.n; div.querySelector(".c").textContent=st.c; div.querySelector(".d").textContent=st.d;
+    div.querySelector("input").addEventListener("change",e=>{if(e.target.checked)done.add(i);else done.delete(i);all[key]=[...done];save(LS_C,all);render()});
+    div.querySelector(".plus").addEventListener("click",e=>{div.classList.toggle("open");e.target.textContent=div.classList.contains("open")?"−":"+"});
+    box.appendChild(div);
+  });
+  $("#bar").style.width=steps.length?Math.round(done.size/steps.length*100)+"%":"0%";
+  $("#progtxt").textContent=steps.length?done.size+" de "+steps.length+" pasos":"";
+}
+function renderWeek(){
+  const c=chicago(); let monday=Date.UTC(c.y,c.m-1,c.d); monday-=( (wd(monday)+6)%7 )*DAY;
+  const box=$("#week"); box.innerHTML="";
+  for(let i=0;i<7;i++){
+    const ms=monday+i*DAY, d=di(ms), tags=[];
+    if(d<0) tags.push("Empieza el mié 28");
+    else{
+      if([1,3,5,0].includes(wd(ms))&&!isPen(ms)) tags.push("LED");
+      const w=wd(ms);
+      if((w===2||w===6)&&!(adapt(ms)&&d<14&&w===2)) tags.push("PanOxyl AM");
+      if(w===3&&Math.floor(Math.max(d,0)/7)%2===1) tags.push("AHA/BHA AM");
+      tags.push({differin:"Differin",acid:"Ácido 🟠",inia:"INIA",roller:"Roller",pen:"Dermapen",repair:"Reparación"}[nightKind(ms)]||"");
+      if(w===1) tags.push("Exfoliante cuerpo");
+    }
+    const card=document.createElement("div"); card.className="card";
+    card.innerHTML='<div class="t"></div><div class="tags">'+tags.filter(Boolean).map(t=>'<span class="tag'+(t.includes("🟠")?" hot":"")+'">'+t.replace(" 🟠","")+'</span>').join("")+'</div>';
+    card.querySelector(".t").textContent=fmt(ms); box.appendChild(card);
+  }
+}
+function renderRev(){
+  const revs=[Date.UTC(2026,10,11),Date.UTC(2026,10,25),Date.UTC(2026,11,9),Date.UTC(2026,11,23),Date.UTC(2027,0,6),Date.UTC(2027,0,20)];
+  const today=Date.UTC(chicago().y,chicago().m-1,chicago().d);
+  const nx=revs.find(r=>r>=today);
+  $("#nextrev").innerHTML="<b>Próxima revisión:</b> "+(nx?fmt(nx):"20 de enero de 2027 (la grande, ya pasó el ciclo)");
+}
+document.querySelectorAll("#sectabs button").forEach(b=>b.addEventListener("click",()=>{cur.s=b.dataset.s; if(b.dataset.s!=="noche"&&autoSection().s==="noche"&&chicago().h<5){cur.ms+=DAY} render()}));
+document.querySelectorAll("#skinchips button").forEach(b=>b.addEventListener("click",()=>{const all=load(LS_S,{});all[dateKey(cur.ms)]=b.dataset.v;save(LS_S,all);render()}));
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{view=b.dataset.v;render()}));
+document.querySelectorAll("details.sec summary").forEach(sm=>sm.addEventListener("click",()=>{const p=sm.querySelector(".p");setTimeout(()=>{p.textContent=sm.parentElement.open?"−":"+"},0)}));
+render();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
