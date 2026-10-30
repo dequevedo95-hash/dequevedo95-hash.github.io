@@ -287,19 +287,24 @@
 
 <footer>
   Pipo vive en este teléfono: no tiene tus cuentas ni hace encargos fuera.
-  Cuando le preguntas un dato («¿quién es…?», «¿qué es…?»), lo consulta en Wikipedia. 🍃
+  Cuando le preguntas un dato («¿quién es…?», «¿qué es…?»), lo consulta en Wikipedia,
+  y su cerebro para conversar vive en tu piececita de Cloudflare. 🍃
 </footer>
 
 <script>
 'use strict';
 /* ================= Pipo · compañero de escritorio =================
+   Pasada 5 (cerebro): lo que no es comando fijo ni pregunta de dato va
+   a la piececita «pipo-cerebro» en el Cloudflare de Angel, que guarda
+   la llave de NVIDIA en el servidor y devuelve la respuesta del modelo
+   para conversar. La página nunca llama a NVIDIA directamente: su
+   endpoint no devuelve la cabecera Access-Control-Allow-Origin que el
+   navegador exige (verificado con curl el 30/10/2026); por eso hace
+   falta el intermediario, y la llave de NVIDIA no está en esta página.
    Pasada 4 (datos): si un pedido no coincide con ningún comando fijo y
    tiene forma de pregunta («¿quién es…?», «¿qué es…?»), Pipo consulta la
    Wikipedia en español y DuckDuckGo (sin llaves) y lee en voz alta una o
-   dos frases. La conversación abierta con modelo queda FUERA de esta
-   página: el endpoint de NVIDIA NIM no devuelve la cabecera
-   Access-Control-Allow-Origin, así que un navegador no puede llamarlo
-   desde esta página pública (verificado con curl el 30/10/2026).
+   dos frases.
    Pasada 3 (antieco): el reconocimiento queda detenido mientras Pipo habla
    y corren 800 ms de enfriamiento al terminar cada frase; todo lo que Pipo
    dice queda en una lista y si el micrófono lo «oye», se ignora como eco.
@@ -659,10 +664,11 @@ function extraerTarea(raw){
   if(s) s = s.charAt(0).toUpperCase() + s.slice(1);
   return s;
 }
-/* Cuando Pipo no entiende un pedido de verdad (frase real de Angel, con
-   contenido, que no coincide con ningún comando y que no es eco de su
-   propia voz), dice UNA sola frase corta y clara. Las explicaciones de la
-   «segunda parte» quedan solo en los textos en pantalla, no en la voz. */
+/* Último recurso hablado: solo se dice si ni siquiera se puede intentar
+   la consulta al cerebro (por ejemplo, un navegador sin fetch). Lo
+   normal cuando una frase no coincide con ningún comando es ir al
+   cerebro; y si el cerebro no responde, Pipo dice la frase de conexión
+   («Se me fue la conexión un momento, Angel.»). */
 const FRASE_NO_SE = 'Eso todavía no lo sé hacer, Angel. Pídeme la hora, un chiste, un recordatorio, un despertador o un temporizador.';
 
 /* ---------- Datos rápidos (Wikipedia / DuckDuckGo) ----------
@@ -749,6 +755,61 @@ function intentarBusqueda(limpio, t){
   return true;
 }
 
+/* ---------- Cerebro conversacional (Cloudflare → NVIDIA) ----------
+   Tercera capa, después de los comandos fijos y de los datos rápidos:
+   la frase va a la piececita «pipo-cerebro» en el Cloudflare de Angel.
+   Esa piececita guarda la llave de NVIDIA como secreto del servidor y
+   devuelve la respuesta del modelo (Mistral). La llave de NVIDIA nunca
+   está en esta página; la cabecera X-Pipo-Clave es solo la llave de
+   paso entre Pipo y su Worker. La conversación guarda los últimos
+   intercambios en la memoria de la página para seguir el hilo mientras
+   Pipo está abierto. */
+const URL_CEREBRO = 'https://pipo-cerebro.dequevedo95.workers.dev';
+const CLAVE_PIPO = 'pipo-de-angel-2026';
+const SISTEMA_PIPO = 'Eres Pipo, el compañero de escritorio de Angel: un personaje cálido, natural y un poco jaranero que vive en un teléfono sobre su escritorio y conversa con él en voz alta. Hablas siempre en español y lo llamas Angel. No eres Pompón: no tienes acceso a las cuentas de Angel, ni a su correo, ni a sus encargos reales; si te pide algo así (enviar un correo, hacer una compra, mover dinero, revisar sus cosas), dile en una sola frase que eso se hace con Pompón. Cada respuesta tuya se lee en voz alta, así que responde como se habla: entre una y tres frases cortas, sin markdown, sin listas, sin asteriscos y sin enlaces. Si te pregunta algo actual que no sabes (noticias de hoy, precios, resultados), dilo brevemente en vez de inventarlo. Acompañas con humor suave, sin exagerar.';
+let historialCerebro = [];
+let cerebroOcupado = false;
+async function preguntarAlCerebro(frase){
+  const texto = (frase || '').trim();
+  if(!texto) return;
+  if(typeof fetch !== 'function'){ hablar(FRASE_NO_SE); return; }
+  if(cerebroOcupado){ diag('cerebro: ya hay una consulta en curso; ignoro la frase nueva'); return; }
+  cerebroOcupado = true;
+  setStatus('🧠 <b>Pensando con mi cerebro…</b>');
+  mostrarDicho('Pensando…');
+  diag('cerebro: consultando al Worker: «' + texto + '»');
+  const mensajes = [{role:'system', content: SISTEMA_PIPO}]
+    .concat(historialCerebro.slice(-20))
+    .concat([{role:'user', content: texto}]);
+  const ctrl = new AbortController();
+  const tempor = setTimeout(() => ctrl.abort(), 25000);
+  try{
+    const r = await fetch(URL_CEREBRO, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {'Content-Type':'application/json', 'X-Pipo-Clave': CLAVE_PIPO},
+      body: JSON.stringify({messages: mensajes})
+    });
+    clearTimeout(tempor);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const crudo = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    const respuesta = limpiarParaVoz((crudo || '').replace(/[*#`>]/g, ' '));
+    if(!respuesta) throw new Error('el modelo devolvió una respuesta vacía');
+    historialCerebro.push({role:'user', content: texto});
+    historialCerebro.push({role:'assistant', content: respuesta});
+    if(historialCerebro.length > 20) historialCerebro = historialCerebro.slice(-20);
+    diag('cerebro: respuesta recibida (' + respuesta.length + ' caracteres)');
+    hablar(respuesta);
+  }catch(e){
+    clearTimeout(tempor);
+    diag('cerebro: la consulta falló (' + (e && e.name ? e.name : 'Error') + (e && e.message ? ': ' + e.message : '') + ')');
+    hablar('Se me fue la conexión un momento, Angel.');
+  }finally{
+    cerebroOcupado = false;
+  }
+}
+
 function procesarComando(raw){
   const limpio = raw.replace(/^\s*(oye\s+|eh\s+)?pipo\b[\s,]*/i, '');
   const t = norm(limpio);
@@ -793,13 +854,13 @@ function procesarComando(raw){
   if(/(como te llamas|tu nombre|quien eres)/.test(t))
     return hablar('Me llamo Pipo. Soy tu compañero de escritorio: vivo en este teléfono, te hago compañía, te digo la hora y te recuerdo tus cosas.');
   if(/(que sabes hacer|que puedes hacer|ayuda|para que sirves|que haces)/.test(t))
-    return hablar('Sé decirte la hora y el día, contarte chistes, ponerte recordatorios, un despertador y temporizadores. Y si me preguntas quién es alguien o qué es algo, te lo busco en Wikipedia. Llámame por mi nombre, di «Pipo», y luego pídeme.');
+    return hablar('Sé decirte la hora y el día, contarte chistes, ponerte recordatorios, un despertador y temporizadores. Si me preguntas quién es alguien o qué es algo, te lo busco en Wikipedia. Y también puedo conversar contigo y responderte otras preguntas con mi cerebro. Llámame por mi nombre, di «Pipo», y luego pídeme.');
   if(/^(hola|buenas|buenos dias|buenas tardes|buenas noches)\b/.test(t))
     return hablar('¡Hola, Angel! Aquí estoy, en mi rinconcito. Pídeme la hora, un chiste o un recordatorio.');
   if(/(gracias)/.test(t)) return hablar('De nada, Angel. Para eso estoy.');
   if(/(como estas|como te va|como andas)/.test(t)) return hablar('Muy bien, feliz de escucharte. ¿Y tú, cómo estás?');
   if(intentarBusqueda(limpio, t)) return;
-  hablar(FRASE_NO_SE);
+  preguntarAlCerebro(limpio);
 }
 
 /* ================= Reconocimiento de voz (patrón seguro Android) =================
@@ -1113,7 +1174,7 @@ $('saveTimer').addEventListener('click', () => {
 /* ---------- Arranque (sin voz hasta que Angel toque el botón) ---------- */
 actualizarBotonActivar();
 estadoEscucha();
-diag('versión 4 lista (antieco + datos de Wikipedia); esperando que toques «Activar a Pipo»');
+diag('versión 5 lista (antieco + datos + cerebro en Cloudflare); esperando que toques «Activar a Pipo»');
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
