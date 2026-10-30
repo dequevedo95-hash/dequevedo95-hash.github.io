@@ -1,4 +1,4 @@
-const CACHE = 'pipo-v2';
+const CACHE = 'pipo-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {

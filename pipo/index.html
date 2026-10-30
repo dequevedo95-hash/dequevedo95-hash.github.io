@@ -81,6 +81,11 @@
     background:rgba(255,90,72,.14); border:1px solid var(--alert); border-radius:14px;
     font-size:1rem; line-height:1.4;
   }
+  #ttsBox{
+    display:none; margin-top:10px; width:min(94vw,520px); padding:12px 14px; text-align:left;
+    background:rgba(255,179,122,.13); border:1px solid var(--coral); border-radius:14px;
+    font-size:1rem; line-height:1.45;
+  }
   #log{margin-top:12px; width:min(94vw,520px); min-height:3.2em;}
   #heard{color:var(--coral2); font-size:1rem; margin:0; min-height:1.3em;}
   #said{font-size:1.22rem; margin:6px 0 0; line-height:1.35;}
@@ -171,6 +176,7 @@
 
 <div id="status">Toca <b>«Activar a Pipo»</b> para despertarme.</div>
 <div id="errBox" role="alert"></div>
+<div id="ttsBox" role="alert"></div>
 
 <div id="log">
   <p id="heard"></p>
@@ -183,6 +189,8 @@
 
 <div class="grid">
   <button id="btnVoz" type="button">🔊 Probar mi voz</button>
+  <button id="btnSonido" type="button">🔔 Probar sonido</button>
+  <button id="btnAyudaVoz" type="button">🛠️ Ayuda: Pipo no habla</button>
   <button id="btnHora" type="button">🕐 ¿Qué hora es?</button>
   <button id="btnDia" type="button">📅 ¿Qué día es hoy?</button>
   <button id="btnChiste" type="button">😂 Cuéntame un chiste</button>
@@ -222,6 +230,21 @@
   <button class="save" id="saveTimer" type="button">Iniciar temporizador</button>
 </section>
 
+<section class="panel" id="panelAyudaVoz">
+  <h3>🛠️ Si Pipo no habla: revisa el motor de voz del teléfono</h3>
+  <p style="margin:0 0 8px;">Pipo usa el motor de voz del propio teléfono para hablar. Si ese motor falta o está apagado, Pipo se queda mudo aunque la página funcione. Revísalo así:</p>
+  <ol style="margin:0; padding-left:20px; line-height:1.55;">
+    <li>Abre <b>Ajustes</b> del teléfono.</li>
+    <li>Entra en <b>Administración general</b> y toca <b>Texto a voz</b> (salida de texto a voz). Si no lo ves, usa la lupa de Ajustes y escribe «texto a voz».</li>
+    <li>Mira <b>Motor preferido</b>: tiene que aparecer uno elegido, por ejemplo <b>Google</b>.</li>
+    <li>Si no aparece ningún motor, abre <b>Play Store</b>, busca <b>«Servicios de voz de Google»</b> e instálalo (es gratis).</li>
+    <li>Vuelve a <b>Ajustes → Administración general → Texto a voz</b> y elige ese motor como preferido. En su idioma, elige <b>Español</b>.</li>
+    <li>Sube el <b>volumen multimedia</b> del teléfono (botones laterales mientras suena algo) y quita el silencio.</li>
+    <li>Regresa aquí y toca <b>«Probar mi voz»</b>.</li>
+  </ol>
+  <p style="margin:10px 0 0;">Y con el botón <b>«Probar sonido»</b> puedes comprobar otra cosa distinta: si oyes los pitidos, la bocina sí funciona y el problema es solo el motor de voz.</p>
+</section>
+
 <section id="pending">
   <h3>Lo que tengo pendiente por ti</h3>
   <div id="items"></div>
@@ -248,7 +271,7 @@
    con espera y tope de errores) y síntesis con los trucos conocidos. */
 const $ = (id) => document.getElementById(id);
 const faceWrap = $('faceWrap'), statusEl = $('status'), heardEl = $('heard'),
-      saidEl = $('said'), errBox = $('errBox'), diagEl = $('diag');
+      saidEl = $('said'), errBox = $('errBox'), diagEl = $('diag'), ttsBox = $('ttsBox');
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '').replace(/[¿?¡!.,;:«»"“”]/g, ' ')
@@ -306,9 +329,26 @@ function cara(m){
 
 /* ---------- Voz (síntesis) ---------- */
 let vozES = null, avisoSinVozES = false;
+function evaluarVoces(){
+  /* Veredicto persistente: si el teléfono no ofrece NINGÚN motor de voz,
+     se dice en pantalla en vez de fallar en silencio. */
+  if(!('speechSynthesis' in window)){
+    ttsBox.textContent = '⚠️ Este navegador no tiene sistema de voz, así que Pipo no puede hablar en voz alta aquí. Sus botones y textos sí funcionan.';
+    ttsBox.style.display = 'block';
+    return;
+  }
+  const vs = speechSynthesis.getVoices();
+  if(vs.length){
+    ttsBox.style.display = 'none';
+  }else{
+    ttsBox.textContent = '⚠️ Este teléfono no le está ofreciendo a la página ningún motor de voz (la lista de voces sale vacía), y sin motor de voz Pipo no puede hablar en voz alta. No es un fallo de la página: hay que revisar el motor de voz del teléfono. Toca «🛠️ Ayuda: Pipo no habla» y sigue los pasos.';
+    ttsBox.style.display = 'block';
+  }
+}
 function elegirVoz(){
   if(!('speechSynthesis' in window)) return;
   const todas = speechSynthesis.getVoices();
+  if(todas.length) ttsBox.style.display = 'none';
   const vs = todas.filter(v => /^es/i.test(v.lang));
   vozES = vs.find(v => /es[-_]US/i.test(v.lang)) || vs.find(v => /es[-_]MX/i.test(v.lang))
        || vs.find(v => /es[-_]ES/i.test(v.lang)) || vs[0] || null;
@@ -322,6 +362,10 @@ function elegirVoz(){
 if('speechSynthesis' in window){
   elegirVoz();
   if(speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = elegirVoz;
+  /* Las voces pueden tardar en llegar: veredicto solo tras darles un margen */
+  setTimeout(evaluarVoces, 2500);
+}else{
+  evaluarVoces();
 }
 let hablando = false, resumeTimer = null;
 function hablar(texto, alTerminar){
@@ -746,6 +790,7 @@ $('activateBtn').addEventListener('click', async () => {
     return;
   }
   setStatus('🔐 Pidiendo permiso para el micrófono…');
+  evaluarVoces();
   let permiso = true;
   try{
     const flujo = await navigator.mediaDevices.getUserMedia({audio: true});
@@ -775,11 +820,28 @@ $('activateBtn').addEventListener('click', async () => {
 /* ---------- Prueba de voz independiente (solo síntesis) ---------- */
 $('btnVoz').addEventListener('click', () => {
   asegurarAudio();
+  evaluarVoces();
   elegirVoz();
   const detalle = vozES ? (' Uso la voz ' + vozES.name + '.') : ' En este teléfono no encontré voz en español, así que uso la voz por defecto.';
   diag(vozES ? ('prueba de voz con ' + vozES.name + ' (' + vozES.lang + ')') : 'prueba de voz con la voz por defecto (sin voz en español)');
   hablar('Hola, Angel, soy Pipo. Así suena mi voz.' + detalle + ' Si me escuchaste bien, mi voz funciona.');
 });
+
+/* ---------- Prueba de sonido (WebAudio: separa bocina de motor de voz) ---------- */
+$('btnSonido').addEventListener('click', () => {
+  asegurarAudio();
+  if(!actx){
+    mostrarError('Este navegador no me dejó generar ni un pitido. Si tampoco suena nada más en el teléfono, revisa el volumen y el silencio.');
+    diag('WebAudio no disponible para la prueba de sonido');
+    return;
+  }
+  mostrarDicho('Probando el sonido: deberías oír tres pitidos.');
+  setStatus('🔊 <b>Probando el sonido…</b> escucha los pitidos.');
+  bip(); setTimeout(bip, 650); setTimeout(bip, 1300);
+  diag('prueba de sonido lanzada: si oíste los pitidos, la bocina funciona y el problema es el motor de voz');
+  setTimeout(() => { if(!hablando) estadoEscucha(); }, 2200);
+});
+$('btnAyudaVoz').addEventListener('click', () => abrirPanel('panelAyudaVoz'));
 
 /* ---------- Pantalla despierta (Wake Lock) ---------- */
 let wakeLock = null;
@@ -801,7 +863,7 @@ document.addEventListener('pointerdown', () => { asegurarAudio(); pedirWakeLock(
 
 /* ---------- Botones y paneles ---------- */
 function cerrarPaneles(){
-  ['panelAlarma', 'panelRec', 'panelTimer'].forEach(id => $(id).classList.remove('open'));
+  ['panelAlarma', 'panelRec', 'panelTimer', 'panelAyudaVoz'].forEach(id => $(id).classList.remove('open'));
 }
 function abrirPanel(id){
   const p = $(id); const estaba = p.classList.contains('open');
