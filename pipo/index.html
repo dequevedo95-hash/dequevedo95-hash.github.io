@@ -70,29 +70,41 @@
   }
   @keyframes talk{from{height:5%;} to{height:15%;}}
 
-  /* ---------- Estado y conversación ---------- */
+  /* ---------- Estado, diagnóstico y conversación ---------- */
   #status{
     margin-top:12px; padding:8px 16px; border:1px solid var(--line); border-radius:999px;
     background:rgba(255,255,255,.04); font-size:1.02rem; max-width:92vw;
   }
   #status b{color:var(--coral2);}
+  #errBox{
+    display:none; margin-top:10px; width:min(94vw,520px); padding:12px 14px; text-align:left;
+    background:rgba(255,90,72,.14); border:1px solid var(--alert); border-radius:14px;
+    font-size:1rem; line-height:1.4;
+  }
   #log{margin-top:12px; width:min(94vw,520px); min-height:3.2em;}
-  #heard{color:var(--muted); font-size:.98rem; margin:0;}
+  #heard{color:var(--coral2); font-size:1rem; margin:0; min-height:1.3em;}
   #said{font-size:1.22rem; margin:6px 0 0; line-height:1.35;}
   #wakeNote{color:var(--muted); font-size:.86rem; margin-top:8px;}
+  #diag{
+    color:var(--muted); font-size:.72rem; margin-top:10px; width:min(94vw,520px);
+    word-break:break-word; opacity:.8;
+  }
 
   /* ---------- Botones ---------- */
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:min(94vw,520px); margin-top:16px;}
+  #activateBtn{
+    width:min(94vw,520px); margin-top:16px; border:none; cursor:pointer;
+    background:linear-gradient(180deg, #ff9a63, #f07f45); color:#2a1608;
+    font:inherit; font-weight:700; font-size:1.35rem; padding:22px 12px; border-radius:18px;
+  }
+  #activateBtn:active{transform:scale(.98);}
+  #activateBtn.on{background:linear-gradient(180deg, #a8d88f, #7fb45e); color:#14250c;}
+  #activateBtn.off{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:min(94vw,520px); margin-top:12px;}
   button{
     font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--line);
     border-radius:16px; padding:16px 10px; font-size:1.08rem; cursor:pointer;
   }
   button:active{transform:scale(.97); background:#38291c;}
-  #micBtn{
-    grid-column:1 / -1; background:linear-gradient(180deg, #ff9a63, #f07f45); color:#2a1608;
-    font-weight:700; font-size:1.2rem; border:none; padding:18px 10px;
-  }
-  #micBtn.on{background:linear-gradient(180deg, #a8d88f, #7fb45e); color:#14250c;}
 
   /* ---------- Paneles ---------- */
   .panel{
@@ -157,16 +169,20 @@
   </div>
 </div>
 
-<div id="status">Estoy despertando…</div>
+<div id="status">Toca <b>«Activar a Pipo»</b> para despertarme.</div>
+<div id="errBox" role="alert"></div>
 
 <div id="log">
   <p id="heard"></p>
-  <p id="said">¡Hola, Angel! Soy Pipo. Toca el botón grande para que te pueda escuchar.</p>
+  <p id="said">¡Hola, Angel! Soy Pipo. Toca el botón grande de abajo: primero te saludo con mi voz y después empiezo a escucharte.</p>
 </div>
 <p id="wakeNote">Cuando esté escuchando, llámame por mi nombre: di <b>«Pipo»</b> y luego lo que quieras.</p>
+<p id="diag"></p>
+
+<button id="activateBtn" type="button">🔊 Activar a Pipo</button>
 
 <div class="grid">
-  <button id="micBtn" type="button">🎤 Activar mi oído</button>
+  <button id="btnVoz" type="button">🔊 Probar mi voz</button>
   <button id="btnHora" type="button">🕐 ¿Qué hora es?</button>
   <button id="btnDia" type="button">📅 ¿Qué día es hoy?</button>
   <button id="btnChiste" type="button">😂 Cuéntame un chiste</button>
@@ -226,9 +242,13 @@
 
 <script>
 'use strict';
-/* ================= Pipo v1 · compañero de escritorio ================= */
+/* ================= Pipo v2 · compañero de escritorio =================
+   Arreglo de voz: activación con un toque, diagnóstico visible en pantalla,
+   reconocimiento seguro para Chrome en Android (continuous=false + reinicio
+   con espera y tope de errores) y síntesis con los trucos conocidos. */
 const $ = (id) => document.getElementById(id);
-const faceWrap = $('faceWrap'), statusEl = $('status'), heardEl = $('heard'), saidEl = $('said');
+const faceWrap = $('faceWrap'), statusEl = $('status'), heardEl = $('heard'),
+      saidEl = $('said'), errBox = $('errBox'), diagEl = $('diag');
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '').replace(/[¿?¡!.,;:«»"“”]/g, ' ')
@@ -243,10 +263,6 @@ function num(tok){
   if(!tok) return null;
   if(/^\d+$/.test(tok)) return parseInt(tok, 10);
   return (tok in NUMPAL) ? NUMPAL[tok] : null;
-}
-function anyNum(str){
-  const m = norm(str).match(/\b(\d+|una?|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciseis|diecisiete|dieciocho|diecinueve|veinte|veintiuno|veintidos|veintitres|veinticuatro|veinticinco|treinta|cuarenta|cincuenta|sesenta)\b/);
-  return m ? num(m[1]) : null;
 }
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -270,50 +286,86 @@ function cuandoTexto(d){
   return 'el ' + d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}) + ' a las ' + horaCorta(d);
 }
 
-/* ---------- Cara y estado ---------- */
-let modo = 'idle'; // idle | listening | speaking
-function setModo(m){
-  modo = m;
+/* ---------- Estado y diagnóstico visible ---------- */
+function setStatus(html){ statusEl.innerHTML = html; }
+function diag(txt){
+  const now = new Date();
+  diagEl.textContent = 'Diagnóstico: ' + txt + ' · ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+}
+function mostrarError(msg){ errBox.textContent = msg; errBox.style.display = 'block'; }
+function limpiarError(){ errBox.style.display = 'none'; errBox.textContent = ''; }
+function mostrarDicho(txt){ saidEl.textContent = txt; }
+function mostrarOido(txt){ heardEl.textContent = txt; }
+
+let modoVisual = 'idle';
+function cara(m){
+  modoVisual = m;
   faceWrap.classList.toggle('listening', m === 'listening');
   faceWrap.classList.toggle('speaking', m === 'speaking');
-  if(m === 'listening') statusEl.innerHTML = '👂 <b>Te escucho…</b> dime lo que quieras.';
-  else if(m === 'speaking') statusEl.innerHTML = '🗣️ Estoy hablando…';
-  else statusEl.innerHTML = micOn
-    ? 'Estoy atento. Llámame: di <b>«Pipo»</b>.'
-    : 'Estoy dormido. Toca <b>«Activar mi oído»</b> para despertarme.';
 }
-function mostrarDicho(txt){ saidEl.textContent = txt; }
-function mostrarOido(txt){ heardEl.textContent = txt ? 'Tú: «' + txt + '»' : ''; }
 
 /* ---------- Voz (síntesis) ---------- */
-let vozES = null;
+let vozES = null, avisoSinVozES = false;
 function elegirVoz(){
-  const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
+  if(!('speechSynthesis' in window)) return;
+  const todas = speechSynthesis.getVoices();
+  const vs = todas.filter(v => /^es/i.test(v.lang));
   vozES = vs.find(v => /es[-_]US/i.test(v.lang)) || vs.find(v => /es[-_]MX/i.test(v.lang))
        || vs.find(v => /es[-_]ES/i.test(v.lang)) || vs[0] || null;
+  if(vozES){
+    diag('voz en español lista: ' + vozES.name + ' (' + vozES.lang + ')');
+  }else if(todas.length && !avisoSinVozES){
+    avisoSinVozES = true;
+    diag('este teléfono no tiene voz en español; uso la voz por defecto');
+  }
 }
 if('speechSynthesis' in window){
   elegirVoz();
-  speechSynthesis.onvoiceschanged = elegirVoz;
+  if(speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = elegirVoz;
 }
-let hablando = false;
+let hablando = false, resumeTimer = null;
 function hablar(texto, alTerminar){
   mostrarDicho(texto);
-  if(!('speechSynthesis' in window)){ if(alTerminar) alTerminar(); return; }
+  if(!('speechSynthesis' in window)){
+    mostrarError('Este navegador no tiene voz para hablar. Puedo seguir con los botones grandes.');
+    diag('speechSynthesis no disponible');
+    if(alTerminar) alTerminar();
+    return;
+  }
   try{
-    speechSynthesis.cancel();
+    speechSynthesis.cancel();           /* truco Chrome: cancelar antes de hablar */
+    clearInterval(resumeTimer);
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = 'es-ES'; if(vozES) u.voice = vozES;
     u.rate = 1.03; u.pitch = 1.12;
-    hablando = true; setModo('speaking');
-    pararEscucha();
-    u.onend = u.onerror = () => {
-      hablando = false; setModo(micOn ? 'idle' : 'idle');
-      if(micOn) arrancarEscucha();
+    hablando = true; cara('speaking');
+    setStatus('🗣️ <b>Hablando…</b>');
+    detenerReconocimiento();
+    /* Truco Chrome: resume() periódico para que no se quede pausado a mitad de frase */
+    resumeTimer = setInterval(() => {
+      try{ if(speechSynthesis.speaking) speechSynthesis.resume(); }catch(e){}
+    }, 4000);
+    let cerro = false;
+    const cerrar = () => {
+      if(cerro) return; cerro = true;
+      clearInterval(resumeTimer);
+      hablando = false; cara(micOn ? 'listening' : 'idle');
+      if(micOn) programarReinicio(250);
       if(alTerminar) alTerminar();
     };
+    u.onend = cerrar;
+    u.onerror = (ev) => {
+      diag('error de voz al hablar: ' + (ev.error || 'desconocido'));
+      if(ev.error && ev.error !== 'interrupted' && ev.error !== 'canceled')
+        mostrarError('No pude hablar en voz alta (error: ' + ev.error + '). Revisa el volumen del teléfono.');
+      cerrar();
+    };
     speechSynthesis.speak(u);
-  }catch(e){ hablando = false; if(alTerminar) alTerminar(); }
+  }catch(e){
+    hablando = false; clearInterval(resumeTimer);
+    diag('excepción al hablar: ' + (e && e.message ? e.message : e));
+    if(alTerminar) alTerminar();
+  }
 }
 
 /* ---------- Reloj grande ---------- */
@@ -401,8 +453,7 @@ let alertaActual = null;
 function disparar(it){
   alertaActual = it;
   quitarItem(it.id);
-  const emoji = ICONOS[it.kind];
-  $('alertEmoji').textContent = emoji;
+  $('alertEmoji').textContent = ICONOS[it.kind];
   if(it.kind === 'alarma'){
     $('alertText').textContent = '¡A despertar, Angel!';
     $('alertSub').textContent = 'Son las ' + horaCorta(new Date()) + '.';
@@ -435,7 +486,7 @@ setInterval(() => {
 
 <script>
 'use strict';
-/* ================= Comandos de voz y botones ================= */
+/* ================= Comandos (voz y botones) ================= */
 function durTexto(ms){
   const s = Math.round(ms / 1000);
   if(s < 60) return s + (s === 1 ? ' segundo' : ' segundos');
@@ -504,6 +555,7 @@ function procesarComando(raw){
   const limpio = raw.replace(/^\s*(oye\s+|eh\s+)?pipo\b[\s,]*/i, '');
   const t = norm(limpio);
   if(!t) return;
+  setStatus('🤔 <b>Pensando…</b>');
   if(/(que hora|hora es|la hora|hora tienes)/.test(t) || t === 'hora')
     return hablar(horaBonita(new Date()) + '.');
   if(/(que dia|dia es hoy|que fecha|fecha es hoy|dia de hoy)/.test(t))
@@ -551,37 +603,98 @@ function procesarComando(raw){
   hablar(segundaParte());
 }
 
-/* ---------- Reconocimiento de voz ---------- */
+/* ================= Reconocimiento de voz (patrón seguro Android) =================
+   continuous = false: cada sesión escucha una frase y termina sola.
+   onend la reinicia con una espera corta; los errores repetidos alargan la
+   espera y, si pasan del tope, la escucha se detiene con un aviso visible. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, micOn = false, despierto = false, despiertoHasta = 0, reinicioTimer = null;
+let rec = null;
+let activado = false;        /* ya pasó por el botón «Activar a Pipo» */
+let micOn = false;           /* Angel quiere que Pipo escuche */
+let recActivo = false;       /* hay una sesión de reconocimiento viva */
+let despierto = false, despiertoHasta = 0;
+let reinicioTimer = null;
+let erroresSeguidos = 0;
+const TOPE_ERRORES = 6;
 
+function estadoEscucha(){
+  if(hablando) return;
+  if(micOn){ cara('listening'); setStatus('👂 <b>Escuchando…</b> di <b>«Pipo»</b> y luego tu pedido.'); }
+  else if(activado){ cara('idle'); setStatus('Estoy callado. Toca el botón grande para que te escuche.'); }
+  else { cara('idle'); setStatus('Toca <b>«Activar a Pipo»</b> para despertarme.'); }
+}
+function actualizarBotonActivar(){
+  const b = $('activateBtn');
+  if(!activado){ b.textContent = '🔊 Activar a Pipo'; b.className = ''; }
+  else if(micOn){ b.textContent = '🟢 Estoy escuchando (toca para callarme)'; b.className = 'on'; }
+  else { b.textContent = '🔇 Estoy callado (toca para escucharme)'; b.className = 'off'; }
+}
 function crearRec(){
-  if(!SR) return null;
   const r = new SR();
   r.lang = 'es-ES';
-  r.continuous = true;
+  r.continuous = false;
   r.interimResults = true;
-  r.onresult = onResultado;
-  r.onend = () => {
-    if(micOn && !hablando && !alertaActual){
-      clearTimeout(reinicioTimer);
-      reinicioTimer = setTimeout(arrancarEscucha, 350);
-    }
+  r.maxAlternatives = 1;
+  r.onstart = () => {
+    recActivo = true;
+    estadoEscucha();
   };
-  r.onerror = (e) => {
-    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
-      micOn = false; actualizarBotonMic();
-      statusEl.innerHTML = '🚫 No tengo permiso para usar el micrófono. Toca <b>«Activar mi oído»</b> y acepta el permiso.';
-      setModo('idle');
-    }
+  r.onresult = onResultado;
+  r.onerror = onErrorRec;
+  r.onend = () => {
+    recActivo = false;
+    if(!micOn || hablando || alertaActual) return;
+    const espera = erroresSeguidos === 0 ? 300 : Math.min(600 * erroresSeguidos, 5000);
+    programarReinicio(espera);
   };
   return r;
 }
-function arrancarEscucha(){
-  if(!rec || !micOn || hablando || alertaActual) return;
-  try{ rec.start(); }catch(e){ /* ya estaba escuchando */ }
+function programarReinicio(ms){
+  clearTimeout(reinicioTimer);
+  reinicioTimer = setTimeout(iniciarEscucha, ms);
 }
-function pararEscucha(){ try{ if(rec) rec.stop(); }catch(e){} }
+function iniciarEscucha(){
+  clearTimeout(reinicioTimer);
+  if(!activado || !micOn || hablando || alertaActual || recActivo) return;
+  if(!SR) return;
+  if(!rec) rec = crearRec();
+  try{ rec.start(); }
+  catch(e){ /* ya estaba arrancando; onend/onerror ordenan el siguiente paso */ }
+}
+function detenerReconocimiento(){
+  clearTimeout(reinicioTimer);
+  if(rec && recActivo){ try{ rec.stop(); }catch(e){} }
+}
+function pararEscuchaTotal(msg){
+  micOn = false;
+  detenerReconocimiento();
+  actualizarBotonActivar();
+  estadoEscucha();
+  if(msg) mostrarError(msg);
+}
+function onErrorRec(e){
+  const cod = e.error || 'desconocido';
+  diag('error de escucha: ' + cod + ' (seguidos: ' + erroresSeguidos + ')');
+  if(cod === 'not-allowed' || cod === 'service-not-allowed'){
+    pararEscuchaTotal('🚫 Chrome me bloqueó el micrófono. Revisa el permiso: toca el candado junto a la dirección de la página, entra en Micrófono y elige «Permitir». Después toca «Activar a Pipo» otra vez.');
+    return;
+  }
+  if(cod === 'audio-capture'){
+    pararEscuchaTotal('🎤 No encontré micrófono disponible en este teléfono. Cierra otras aplicaciones que lo estén usando y toca «Activar a Pipo» otra vez.');
+    return;
+  }
+  if(cod === 'no-speech' || cod === 'aborted'){
+    return; /* se reinicia solo y en silencio desde onend */
+  }
+  /* network y demás: cuenta como fallo, con espera creciente y tope */
+  erroresSeguidos++;
+  if(cod === 'network')
+    diag('sin conexión con el servicio de voz; reintento con espera (fallo ' + erroresSeguidos + ' de ' + TOPE_ERRORES + ')');
+  if(erroresSeguidos >= TOPE_ERRORES){
+    pararEscuchaTotal('⚠️ Intenté escucharte varias veces y el servicio de voz no responde (último error: ' + cod + '). Revisa que el teléfono tenga internet y toca el botón grande para intentarlo de nuevo.');
+    erroresSeguidos = 0;
+  }
+}
 function onResultado(ev){
   let finalTxt = '', interimTxt = '';
   for(let i = ev.resultIndex; i < ev.results.length; i++){
@@ -589,13 +702,16 @@ function onResultado(ev){
     if(res.isFinal) finalTxt += res[0].transcript + ' ';
     else interimTxt += res[0].transcript;
   }
-  const candidato = (finalTxt || interimTxt).trim();
-  if(!candidato) return;
+  if(interimTxt && !finalTxt)
+    mostrarOido('🎧 Te estoy oyendo: «' + interimTxt.trim() + '»');
+  if(!finalTxt) return;
+  erroresSeguidos = 0;
+  limpiarError();
+  const candidato = finalTxt.trim();
+  mostrarOido('Tú: «' + candidato + '»');
   const t = norm(candidato);
   const idx = t.lastIndexOf('pipo');
   if(idx >= 0){
-    mostrarOido(candidato);
-    if(!finalTxt) return; // espero el resultado final para actuar
     const resto = t.slice(idx + 4).trim();
     if(resto){ despierto = false; procesarComando(candidato); }
     else{
@@ -604,35 +720,65 @@ function onResultado(ev){
     }
     return;
   }
-  if(despierto && finalTxt){
+  if(despierto){
     if(Date.now() > despiertoHasta){ despierto = false; return; }
     despierto = false;
-    mostrarOido(finalTxt.trim());
-    procesarComando(finalTxt);
+    procesarComando(candidato);
   }
 }
-function actualizarBotonMic(){
-  const b = $('micBtn');
-  b.textContent = micOn ? '🟢 Estoy escuchando (toca para callarme)' : '🎤 Activar mi oído';
-  b.classList.toggle('on', micOn);
-}
-$('micBtn').addEventListener('click', () => {
+
+/* ---------- Activación: un solo toque lo pone todo en marcha ---------- */
+$('activateBtn').addEventListener('click', async () => {
   asegurarAudio(); pedirWakeLock();
-  if(!SR){
-    statusEl.innerHTML = 'Este navegador no me deja escuchar, pero mis botones grandes funcionan igual.';
-    hablar('Este navegador no me deja escuchar, Angel, pero mis botones funcionan igual.');
+  if(activado){
+    /* El botón grande también sirve para callar y volver a escuchar */
+    micOn = !micOn;
+    actualizarBotonActivar();
+    if(micOn){ limpiarError(); iniciarEscucha(); estadoEscucha(); }
+    else { detenerReconocimiento(); hablar('Me callo, Angel. Toca el botón grande cuando quieras hablar conmigo.'); }
     return;
   }
-  micOn = !micOn;
-  if(micOn){
-    if(!rec) rec = crearRec();
-    arrancarEscucha();
-    hablar('¡Ya te escucho, Angel! Di «Pipo» y luego lo que quieras.');
-  }else{
-    pararEscucha();
-    hablar('Me callo. Toca el botón cuando quieras hablar conmigo.');
+  if(!SR){
+    activado = true; actualizarBotonActivar(); estadoEscucha();
+    mostrarError('Este navegador no me deja escuchar tu voz (no tiene reconocimiento de voz). Mis botones grandes y «Probar mi voz» sí funcionan.');
+    diag('SpeechRecognition no disponible en este navegador');
+    hablar('Hola, Angel, soy Pipo. Este navegador no me deja escucharte, pero mis botones funcionan igual.');
+    return;
   }
-  actualizarBotonMic(); setModo('idle');
+  setStatus('🔐 Pidiendo permiso para el micrófono…');
+  let permiso = true;
+  try{
+    const flujo = await navigator.mediaDevices.getUserMedia({audio: true});
+    flujo.getTracks().forEach(p => p.stop());
+    diag('permiso de micrófono aceptado');
+  }catch(e){
+    permiso = false;
+    diag('permiso de micrófono rechazado: ' + (e && e.name ? e.name : e));
+  }
+  activado = true;
+  actualizarBotonActivar();
+  if(!permiso){
+    mostrarError('🚫 No me diste permiso para el micrófono, y sin eso no puedo escucharte. Toca el candado junto a la dirección de la página, entra en Micrófono, elige «Permitir» y vuelve a tocar «Activar a Pipo».');
+    hablar('Hola, Angel, soy Pipo. Sin permiso para el micrófono no puedo escucharte. Revisa el candado de Chrome y vuelve a tocar el botón grande.');
+    actualizarBotonActivar();
+    return;
+  }
+  /* Primero la prueba de voz; cuando termina el saludo, empieza la escucha */
+  hablar('Hola Angel, soy Pipo. Ya te escucho.', () => {
+    micOn = true;
+    actualizarBotonActivar();
+    iniciarEscucha();
+    estadoEscucha();
+  });
+});
+
+/* ---------- Prueba de voz independiente (solo síntesis) ---------- */
+$('btnVoz').addEventListener('click', () => {
+  asegurarAudio();
+  elegirVoz();
+  const detalle = vozES ? (' Uso la voz ' + vozES.name + '.') : ' En este teléfono no encontré voz en español, así que uso la voz por defecto.';
+  diag(vozES ? ('prueba de voz con ' + vozES.name + ' (' + vozES.lang + ')') : 'prueba de voz con la voz por defecto (sin voz en español)');
+  hablar('Hola, Angel, soy Pipo. Así suena mi voz.' + detalle + ' Si me escuchaste bien, mi voz funciona.');
 });
 
 /* ---------- Pantalla despierta (Wake Lock) ---------- */
@@ -646,7 +792,10 @@ async function pedirWakeLock(){
   }catch(e){ /* el teléfono decide; Pipo sigue funcionando */ }
 }
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible') pedirWakeLock();
+  if(document.visibilityState === 'visible'){
+    pedirWakeLock();
+    if(micOn && !hablando) iniciarEscucha();
+  }
 });
 document.addEventListener('pointerdown', () => { asegurarAudio(); pedirWakeLock(); }, {once:true});
 
@@ -670,9 +819,9 @@ $('btnPaneles').addEventListener('click', cerrarPaneles);
 
 function fechaDesdeInputTime(valor){
   if(!valor) return null;
-  const [h, m] = valor.split(':').map(Number);
+  const partes = valor.split(':').map(Number);
   const now = new Date();
-  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), partes[0], partes[1], 0, 0);
   if(d <= now) d.setDate(d.getDate() + 1);
   return d;
 }
@@ -719,9 +868,10 @@ $('saveTimer').addEventListener('click', () => {
   hablar('Temporizador en marcha: ' + durTexto(mins * 60000) + '. Te aviso cuando termine.');
 });
 
-/* ---------- Arranque ---------- */
-actualizarBotonMic();
-setModo('idle');
+/* ---------- Arranque (sin voz hasta que Angel toque el botón) ---------- */
+actualizarBotonActivar();
+estadoEscucha();
+diag('versión de voz 2 lista; esperando que toques «Activar a Pipo»');
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
