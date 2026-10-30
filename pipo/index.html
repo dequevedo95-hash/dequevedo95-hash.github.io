@@ -33,39 +33,61 @@
     position:absolute; inset:-8%; border-radius:50%;
     border:3px solid rgba(255,140,90,.0); pointer-events:none;
   }
-  #faceWrap.listening #halo{border-color:rgba(255,140,90,.55); animation:pulse 1.4s ease-out infinite;}
+  #faceWrap.listening #halo{border-color:rgba(255,120,170,.55); animation:pulse 1.4s ease-out infinite;}
   @keyframes pulse{0%{transform:scale(.92); opacity:.9;} 100%{transform:scale(1.12); opacity:0;}}
   #face{
-    position:absolute; inset:0; border-radius:50%;
-    background:radial-gradient(115% 115% at 35% 28%, #ffd9a8 0%, #ffab66 55%, #f28a4b 100%);
-    box-shadow:0 14px 34px rgba(0,0,0,.45), inset 0 -14px 26px rgba(160,70,20,.28);
+    position:absolute; inset:0; border-radius:50%; z-index:1;
+    background:
+      radial-gradient(90% 55% at 50% 16%, rgba(255,255,255,.38) 0%, rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, #ffc7dd 0%, #ff9ec4 56%, #ffa8cc 65.5%, #241b21 66.5%, #161116 100%);
+    box-shadow:0 14px 34px rgba(0,0,0,.45), inset 0 -14px 26px rgba(0,0,0,.35), inset 0 10px 18px rgba(255,255,255,.22);
     animation:breathe 4.2s ease-in-out infinite;
   }
+  /* Antenas con pompones negros: la forma de Pompón, en rosa y negro */
+  .antenna{position:absolute; top:-16%; width:16%; height:24%; z-index:0; transform-origin:50% 100%; animation:balanceo 5s ease-in-out infinite;}
+  #antL{left:29%; transform:rotate(-8deg);}
+  #antR{right:29%; transform:rotate(8deg); animation-delay:-2.5s;}
+  @keyframes balanceo{0%,100%{rotate:-2.5deg;} 50%{rotate:2.5deg;}}
+  .stalk{position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:17%; height:60%; background:#3a2733; border-radius:99px;}
+  .pompom{position:absolute; left:50%; top:0; transform:translateX(-50%); width:92%; aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #57404f 0%, #2a2029 55%, #141017 100%);
+    box-shadow:0 3px 8px rgba(0,0,0,.4), inset 0 -4px 8px rgba(0,0,0,.5);}
+  /* Manitas rosas y piecitos negros */
+  .hand{position:absolute; top:57%; width:13%; height:17%; z-index:2; border-radius:50%;
+    background:radial-gradient(circle at 38% 30%, #ffb9d4 0%, #ff8fb8 60%, #f973a6 100%);
+    box-shadow:0 4px 8px rgba(0,0,0,.3);}
+  #handL{left:-4.5%; transform:rotate(18deg);}
+  #handR{right:-4.5%; transform:rotate(-18deg);}
+  .foot{position:absolute; bottom:-2.5%; width:21%; height:9.5%; z-index:2; border-radius:50%;
+    background:radial-gradient(ellipse at 50% 30%, #3d2f38 0%, #1d161d 70%);
+    box-shadow:inset 0 2px 3px rgba(255,255,255,.18), 0 3px 6px rgba(0,0,0,.35);}
+  #footL{left:17%;} #footR{right:17%;}
   @keyframes breathe{0%,100%{transform:scale(1);} 50%{transform:scale(1.018);}}
-  #sprout{position:absolute; top:-7%; left:50%; transform:translateX(-50%); font-size:2.1rem; filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));}
   .eye{
-    position:absolute; top:38%; width:13.5%; height:17%;
-    background:#33231a; border-radius:50%;
+    position:absolute; top:33%; width:14.5%; height:20%;
+    background:#2b1a22; border-radius:50%;
     transform-origin:50% 50%; animation:blink 4.6s infinite;
   }
+  .eye::after{content:''; position:absolute; top:13%; left:15%; width:36%; height:24%;
+    background:#fff; border-radius:50%; opacity:.95;}
   #eyeL{left:26%;} #eyeR{right:26%;}
   @keyframes blink{0%, 91%, 100%{transform:scaleY(1);} 94%{transform:scaleY(.08);} 97%{transform:scaleY(1);}}
   #faceWrap.listening .eye{animation:none; transform:scaleY(1.12);}
-  .cheek{position:absolute; top:56%; width:17%; height:11%; border-radius:50%;
-    background:rgba(255,92,72,.38); filter:blur(3px);}
+  .cheek{position:absolute; top:51%; width:17%; height:11%; border-radius:50%;
+    background:rgba(255,77,141,.5); filter:blur(3px);}
   #cheekL{left:13%;} #cheekR{right:13%;}
   #mouth{
-    position:absolute; left:50%; top:60%; transform:translateX(-50%);
+    position:absolute; left:50%; top:53%; transform:translateX(-50%);
     width:26%; height:13%;
-    border:4px solid #8a4a22; border-top:none; border-left-color:transparent; border-right-color:transparent;
+    border:4px solid #7c2d4e; border-top:none; border-left-color:transparent; border-right-color:transparent;
     border-radius:0 0 120px 120px;
     transition:all .18s ease;
   }
   #faceWrap.listening #mouth{
-    width:11%; height:11%; border:4px solid #8a4a22; border-radius:50%; background:#7a3c1c;
+    width:11%; height:11%; border:4px solid #7c2d4e; border-radius:50%; background:#5e1f3a;
   }
   #faceWrap.speaking #mouth{
-    width:19%; border:4px solid #8a4a22; border-radius:50%; background:#7a3c1c;
+    width:19%; border:4px solid #7c2d4e; border-radius:50%; background:#5e1f3a;
     animation:talk .32s ease-in-out infinite alternate;
   }
   @keyframes talk{from{height:5%;} to{height:15%;}}
@@ -164,14 +186,19 @@
 
 <div id="faceWrap" aria-hidden="true">
   <div id="halo"></div>
+  <div class="antenna" id="antL"><div class="pompom"></div><div class="stalk"></div></div>
+  <div class="antenna" id="antR"><div class="pompom"></div><div class="stalk"></div></div>
   <div id="face">
-    <div id="sprout">🌱</div>
     <div class="eye" id="eyeL"></div>
     <div class="eye" id="eyeR"></div>
     <div class="cheek" id="cheekL"></div>
     <div class="cheek" id="cheekR"></div>
     <div id="mouth"></div>
   </div>
+  <div class="hand" id="handL"></div>
+  <div class="hand" id="handR"></div>
+  <div class="foot" id="footL"></div>
+  <div class="foot" id="footR"></div>
 </div>
 
 <div id="status">Toca <b>«Activar a Pipo»</b> para despertarme.</div>
