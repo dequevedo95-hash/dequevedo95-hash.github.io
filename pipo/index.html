@@ -259,13 +259,20 @@
 </div>
 
 <footer>
-  Pipo vive en este teléfono y no sale de aquí: no tiene tus cuentas ni hace encargos fuera.
-  Lo que aún no sepa hacer, lo aprende en su segunda parte. 🍃
+  Pipo vive en este teléfono: no tiene tus cuentas ni hace encargos fuera.
+  Cuando le preguntas un dato («¿quién es…?», «¿qué es…?»), lo consulta en Wikipedia. 🍃
 </footer>
 
 <script>
 'use strict';
-/* ================= Pipo v3 · compañero de escritorio =================
+/* ================= Pipo · compañero de escritorio =================
+   Pasada 4 (datos): si un pedido no coincide con ningún comando fijo y
+   tiene forma de pregunta («¿quién es…?», «¿qué es…?»), Pipo consulta la
+   Wikipedia en español y DuckDuckGo (sin llaves) y lee en voz alta una o
+   dos frases. La conversación abierta con modelo queda FUERA de esta
+   página: el endpoint de NVIDIA NIM no devuelve la cabecera
+   Access-Control-Allow-Origin, así que un navegador no puede llamarlo
+   desde esta página pública (verificado con curl el 30/10/2026).
    Pasada 3 (antieco): el reconocimiento queda detenido mientras Pipo habla
    y corren 800 ms de enfriamiento al terminar cada frase; todo lo que Pipo
    dice queda en una lista y si el micrófono lo «oye», se ignora como eco.
@@ -631,6 +638,90 @@ function extraerTarea(raw){
    «segunda parte» quedan solo en los textos en pantalla, no en la voz. */
 const FRASE_NO_SE = 'Eso todavía no lo sé hacer, Angel. Pídeme la hora, un chiste, un recordatorio, un despertador o un temporizador.';
 
+/* ---------- Datos rápidos (Wikipedia / DuckDuckGo) ----------
+   Si Angel pregunta «¿quién es…?» o «¿qué es…?» y ningún comando fijo
+   coincide, Pipo consulta la Wikipedia en español (y, si ahí no hay
+   nada útil, DuckDuckGo). Son consultas públicas, sin llaves ni cuentas:
+   solo viaja la pregunta, nada de Angel. La respuesta se recorta a una
+   o dos frases cortas para decirla en voz alta. */
+let buscandoDato = false;
+function fetchConTiempo(url, ms){
+  const ctrl = new AbortController();
+  const tempor = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, {signal: ctrl.signal}).finally(() => clearTimeout(tempor));
+}
+function limpiarParaVoz(texto){
+  let s = (texto || '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+  if(!s) return null;
+  const frases = s.split(/(?<=[.!?])\s+/).filter(Boolean);
+  let out = frases.slice(0, 2).join(' ');
+  if(out.length > 320){
+    out = frases[0] || out;
+    if(out.length > 320) out = out.slice(0, 320).replace(/\s+\S*$/, '') + '.';
+  }
+  return out;
+}
+async function buscarEnWikipedia(tema){
+  const url = 'https://es.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='
+    + encodeURIComponent(tema) + '&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*';
+  const r = await fetchConTiempo(url, 9000);
+  if(!r.ok) return null;
+  const j = await r.json();
+  const pages = j && j.query && j.query.pages;
+  if(!pages) return null;
+  const primera = Object.values(pages)[0];
+  if(!primera || !primera.extract) return null;
+  if(/puede referirse a/i.test(primera.extract)) return null; /* desambiguación: no sirve en voz alta */
+  return primera.extract;
+}
+async function buscarEnDDG(tema){
+  const url = 'https://api.duckduckgo.com/?q=' + encodeURIComponent(tema)
+    + '&format=json&no_html=1&skip_disambig=1&kl=es-es';
+  const r = await fetchConTiempo(url, 9000);
+  if(!r.ok) return null;
+  const j = await r.json();
+  if(j && j.AbstractText) return j.AbstractText;
+  if(j && Array.isArray(j.RelatedTopics) && j.RelatedTopics.length && j.RelatedTopics[0].Text)
+    return j.RelatedTopics[0].Text;
+  return null;
+}
+async function buscarDato(tema){
+  try{
+    const w = await buscarEnWikipedia(tema);
+    const limpioW = limpiarParaVoz(w);
+    if(limpioW) return limpioW;
+  }catch(e){ diag('Wikipedia no respondió: ' + (e && e.name ? e.name : e)); }
+  const d = await buscarEnDDG(tema);
+  return limpiarParaVoz(d);
+}
+function intentarBusqueda(limpio, t){
+  const gate = /^(quien (?:es|fue|era)|que (?:es|fue|significa|quiere decir)|que sabes (?:de|sobre))\s+(.+)$/.exec(t);
+  if(!gate) return false;
+  let tema = gate[2].trim();
+  const limpioPlano = limpio.replace(/[¿?¡!]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const mRaw = /^(?:oye\s+)?(?:qui[eé]n\s+(?:es|fue|era)|qu[eé]\s+(?:es|fue|significa|quiere\s+decir)|qu[eé]\s+sabes\s+(?:de|sobre))\s+(.+)$/i.exec(limpioPlano);
+  if(mRaw && mRaw[1]) tema = mRaw[1].trim();
+  if(!tema) return false;
+  if(buscandoDato){ diag('ya hay una búsqueda en curso; ignoro la nueva pregunta'); return true; }
+  buscandoDato = true;
+  setStatus('🔎 <b>Buscando eso…</b>');
+  mostrarDicho('Buscando «' + tema + '»…');
+  diag('buscando dato en Wikipedia: «' + tema + '»');
+  buscarDato(tema).then(res => {
+    buscandoDato = false;
+    if(res) hablar(res);
+    else hablar('Eso no lo encontré, Angel.');
+  }).catch(() => {
+    buscandoDato = false;
+    diag('la búsqueda de datos falló por red');
+    hablar('Se me fue la conexión un momento, Angel.');
+  });
+  return true;
+}
+
 function procesarComando(raw){
   const limpio = raw.replace(/^\s*(oye\s+|eh\s+)?pipo\b[\s,]*/i, '');
   const t = norm(limpio);
@@ -675,11 +766,12 @@ function procesarComando(raw){
   if(/(como te llamas|tu nombre|quien eres)/.test(t))
     return hablar('Me llamo Pipo. Soy tu compañero de escritorio: vivo en este teléfono, te hago compañía, te digo la hora y te recuerdo tus cosas.');
   if(/(que sabes hacer|que puedes hacer|ayuda|para que sirves|que haces)/.test(t))
-    return hablar('Sé decirte la hora y el día, contarte chistes, ponerte recordatorios, un despertador y temporizadores. Llámame por mi nombre, di «Pipo», y luego pídeme.');
+    return hablar('Sé decirte la hora y el día, contarte chistes, ponerte recordatorios, un despertador y temporizadores. Y si me preguntas quién es alguien o qué es algo, te lo busco en Wikipedia. Llámame por mi nombre, di «Pipo», y luego pídeme.');
   if(/^(hola|buenas|buenos dias|buenas tardes|buenas noches)\b/.test(t))
     return hablar('¡Hola, Angel! Aquí estoy, en mi rinconcito. Pídeme la hora, un chiste o un recordatorio.');
   if(/(gracias)/.test(t)) return hablar('De nada, Angel. Para eso estoy.');
   if(/(como estas|como te va|como andas)/.test(t)) return hablar('Muy bien, feliz de escucharte. ¿Y tú, cómo estás?');
+  if(intentarBusqueda(limpio, t)) return;
   hablar(FRASE_NO_SE);
 }
 
@@ -994,7 +1086,7 @@ $('saveTimer').addEventListener('click', () => {
 /* ---------- Arranque (sin voz hasta que Angel toque el botón) ---------- */
 actualizarBotonActivar();
 estadoEscucha();
-diag('versión de voz 3 lista (antieco); esperando que toques «Activar a Pipo»');
+diag('versión 4 lista (antieco + datos de Wikipedia); esperando que toques «Activar a Pipo»');
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
