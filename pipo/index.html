@@ -265,8 +265,11 @@
 
 <script>
 'use strict';
-/* ================= Pipo v2 · compañero de escritorio =================
-   Arreglo de voz: activación con un toque, diagnóstico visible en pantalla,
+/* ================= Pipo v3 · compañero de escritorio =================
+   Pasada 3 (antieco): el reconocimiento queda detenido mientras Pipo habla
+   y corren 800 ms de enfriamiento al terminar cada frase; todo lo que Pipo
+   dice queda en una lista y si el micrófono lo «oye», se ignora como eco.
+   Hereda de v2: activación con un toque, diagnóstico visible en pantalla,
    reconocimiento seguro para Chrome en Android (continuous=false + reinicio
    con espera y tope de errores) y síntesis con los trucos conocidos. */
 const $ = (id) => document.getElementById(id);
@@ -368,8 +371,38 @@ if('speechSynthesis' in window){
   evaluarVoces();
 }
 let hablando = false, resumeTimer = null;
+/* ---------- Antieco: Pipo no debe oírse a sí mismo ----------
+   1) Mientras habla, el reconocimiento está detenido y todo resultado que
+      llegue se descarta. 2) Al terminar de hablar corren 800 ms de
+      enfriamiento antes de volver a escuchar. 3) Las frases que Pipo acaba
+      de decir quedan en una lista rodante: si el micrófono «oye» una de
+      ellas, es su propia voz por la bocina y se ignora. */
+const ENFRIAMIENTO_MS = 800;
+let enfriamientoHasta = 0;
+const frasesPropias = [];
+function registrarFrasePropia(texto){
+  const n = norm(texto);
+  if(!n) return;
+  frasesPropias.push(n);
+  while(frasesPropias.length > 8) frasesPropias.shift();
+}
+function sePareceA(t, ref){
+  if(t === ref) return true;
+  if(ref.length >= 10 && t.includes(ref)) return true;
+  if(t.length >= 10 && ref.includes(t)) return true;
+  const a = new Set(t.split(' ')), b = new Set(ref.split(' '));
+  let inter = 0;
+  a.forEach(w => { if(b.has(w)) inter++; });
+  const union = a.size + b.size - inter;
+  return union > 0 && (inter / union) >= 0.6;
+}
+function esVozPropia(t){
+  if(!t) return false;
+  return frasesPropias.some(ref => sePareceA(t, ref));
+}
 function hablar(texto, alTerminar){
   mostrarDicho(texto);
+  registrarFrasePropia(texto);
   if(!('speechSynthesis' in window)){
     mostrarError('Este navegador no tiene voz para hablar. Puedo seguir con los botones grandes.');
     diag('speechSynthesis no disponible');
@@ -394,7 +427,10 @@ function hablar(texto, alTerminar){
       if(cerro) return; cerro = true;
       clearInterval(resumeTimer);
       hablando = false; cara(micOn ? 'listening' : 'idle');
-      if(micOn) programarReinicio(250);
+      /* Enfriamiento antieco: la escucha solo vuelve 800 ms DESPUÉS de que
+         Pipo terminó de hablar, para no captar el final de su propia voz. */
+      enfriamientoHasta = Date.now() + ENFRIAMIENTO_MS;
+      if(micOn) programarReinicio(ENFRIAMIENTO_MS + 60);
       if(alTerminar) alTerminar();
     };
     u.onend = cerrar;
@@ -407,6 +443,7 @@ function hablar(texto, alTerminar){
     speechSynthesis.speak(u);
   }catch(e){
     hablando = false; clearInterval(resumeTimer);
+    enfriamientoHasta = Date.now() + ENFRIAMIENTO_MS;
     diag('excepción al hablar: ' + (e && e.message ? e.message : e));
     if(alTerminar) alTerminar();
   }
@@ -588,12 +625,11 @@ function extraerTarea(raw){
   if(s) s = s.charAt(0).toUpperCase() + s.slice(1);
   return s;
 }
-const FRASES2 = [
-  'Eso todavía no lo sé hacer, Angel, pero lo aprendo en mi segunda parte. Por ahora pídeme la hora, un chiste, un recordatorio, un despertador o un temporizador.',
-  'Uy, eso se me escapa por ahora, pero llega en mi segunda parte. Mientras tanto te resuelvo la hora, el día, chistes y recordatorios.',
-  'Eso lo aprendo en mi segunda parte, Angel. Hoy te ayudo con la hora, el día, chistes, recordatorios, despertador y temporizadores.'
-];
-const segundaParte = () => FRASES2[Math.floor(Math.random() * FRASES2.length)];
+/* Cuando Pipo no entiende un pedido de verdad (frase real de Angel, con
+   contenido, que no coincide con ningún comando y que no es eco de su
+   propia voz), dice UNA sola frase corta y clara. Las explicaciones de la
+   «segunda parte» quedan solo en los textos en pantalla, no en la voz. */
+const FRASE_NO_SE = 'Eso todavía no lo sé hacer, Angel. Pídeme la hora, un chiste, un recordatorio, un despertador o un temporizador.';
 
 function procesarComando(raw){
   const limpio = raw.replace(/^\s*(oye\s+|eh\s+)?pipo\b[\s,]*/i, '');
@@ -644,7 +680,7 @@ function procesarComando(raw){
     return hablar('¡Hola, Angel! Aquí estoy, en mi rinconcito. Pídeme la hora, un chiste o un recordatorio.');
   if(/(gracias)/.test(t)) return hablar('De nada, Angel. Para eso estoy.');
   if(/(como estas|como te va|como andas)/.test(t)) return hablar('Muy bien, feliz de escucharte. ¿Y tú, cómo estás?');
-  hablar(segundaParte());
+  hablar(FRASE_NO_SE);
 }
 
 /* ================= Reconocimiento de voz (patrón seguro Android) =================
@@ -688,7 +724,12 @@ function crearRec(){
   r.onend = () => {
     recActivo = false;
     if(!micOn || hablando || alertaActual) return;
-    const espera = erroresSeguidos === 0 ? 300 : Math.min(600 * erroresSeguidos, 5000);
+    /* Sin errores: reinicio casi inmediato, para que el oído tenga el menor
+       hueco posible. Con errores seguidos: espera creciente con tope.
+       Y nunca antes de que termine el enfriamiento antieco. */
+    let espera = erroresSeguidos === 0 ? 150 : Math.min(600 * erroresSeguidos, 5000);
+    const falta = enfriamientoHasta - Date.now();
+    if(falta > espera) espera = falta + 30;
     programarReinicio(espera);
   };
   return r;
@@ -701,6 +742,8 @@ function iniciarEscucha(){
   clearTimeout(reinicioTimer);
   if(!activado || !micOn || hablando || alertaActual || recActivo) return;
   if(!SR) return;
+  const falta = enfriamientoHasta - Date.now();
+  if(falta > 0){ programarReinicio(falta + 30); return; }
   if(!rec) rec = crearRec();
   try{ rec.start(); }
   catch(e){ /* ya estaba arrancando; onend/onerror ordenan el siguiente paso */ }
@@ -740,6 +783,12 @@ function onErrorRec(e){
   }
 }
 function onResultado(ev){
+  /* Antieco (1): si Pipo está hablando o aún corre el enfriamiento, todo
+     lo que llegue es su propia voz saliendo por la bocina: se descarta. */
+  if(hablando || Date.now() < enfriamientoHasta){
+    diag('ignorado lo oído: era la voz de Pipo (eco)');
+    return;
+  }
   let finalTxt = '', interimTxt = '';
   for(let i = ev.resultIndex; i < ev.results.length; i++){
     const res = ev.results[i];
@@ -749,18 +798,30 @@ function onResultado(ev){
   if(interimTxt && !finalTxt)
     mostrarOido('🎧 Te estoy oyendo: «' + interimTxt.trim() + '»');
   if(!finalTxt) return;
+  const candidato = finalTxt.trim();
+  const t = norm(candidato);
+  if(!t) return;
+  /* Antieco (2): si lo oído coincide con una frase que Pipo acaba de
+     decir, es un eco tardío: se ignora sin responder nada. */
+  if(esVozPropia(t)){
+    diag('ignorado lo oído: coincide con una frase de Pipo (eco)');
+    return;
+  }
   erroresSeguidos = 0;
   limpiarError();
-  const candidato = finalTxt.trim();
   mostrarOido('Tú: «' + candidato + '»');
-  const t = norm(candidato);
-  const idx = t.lastIndexOf('pipo');
-  if(idx >= 0){
-    const resto = t.slice(idx + 4).trim();
-    if(resto){ despierto = false; procesarComando(candidato); }
-    else{
+  const mPipo = candidato.match(/\bpipo\b/i);
+  if(mPipo){
+    /* La orden es SOLO lo que va después del nombre; el nombre se quita. */
+    const restoRaw = candidato.slice(mPipo.index + mPipo[0].length).replace(/^[\s,.:;!¡]+/, '').trim();
+    if(!norm(restoRaw)){
+      /* Dijeron solo «Pipo»: saludo y oído abierto. Para este caso va el
+         saludo, NUNCA el mensaje de «eso no lo sé hacer». */
       despierto = true; despiertoHasta = Date.now() + 9000;
       hablar('¡Dime, Angel!');
+    }else{
+      despierto = false;
+      procesarComando(restoRaw);
     }
     return;
   }
@@ -933,7 +994,7 @@ $('saveTimer').addEventListener('click', () => {
 /* ---------- Arranque (sin voz hasta que Angel toque el botón) ---------- */
 actualizarBotonActivar();
 estadoEscucha();
-diag('versión de voz 2 lista; esperando que toques «Activar a Pipo»');
+diag('versión de voz 3 lista (antieco); esperando que toques «Activar a Pipo»');
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
