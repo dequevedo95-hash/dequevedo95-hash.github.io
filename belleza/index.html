@@ -153,7 +153,7 @@ const wd=ms=>new Date(ms).getUTCDay();
 const isPen=ms=>ms>=PEN0&&(ms-PEN0)%(28*DAY)===0;
 const adapt=ms=>{const d=di(ms);return d>=0&&d<28};
 function fmt(ms){let t=new Date(ms).toLocaleDateString("es-ES",{timeZone:"UTC",weekday:"long",day:"numeric",month:"long"});return t.charAt(0).toUpperCase()+t.slice(1)}
-function hydrator(ms){return [1,3,5,0].includes(wd(ms))?{n:"Anua PDRN Serum",c:"2–3 gotas · piel húmeda",d:"Suero hidratante y reparador (PDRN + hialurónico). Sobre la piel húmeda, antes de la crema."}:{n:"SkinMedica HA5",c:"una capa fina · piel húmeda",d:"Hidratante de ácido hialurónico. Sobre la piel húmeda, antes de la crema."}}
+function hydrator(ms){return [1,3,5,0].includes(wd(ms))?{n:"Anua PDRN Serum",c:"2–3 gotas · piel húmeda",d:"Suero hidratante y reparador (PDRN + hialurónico). Sobre la piel húmeda, antes de la crema."}:{n:"Anua PDRN Serum",c:"2–3 gotas · piel húmeda",d:"Suero hidratante y reparador (PDRN + hialurónico). Sobre la piel húmeda, antes de la crema."}}
 function repairCream(ms){return Math.floor(di(ms)/7)%2===0?{n:"COSRX Snail 92",c:"capa fina · último paso",d:"Crema de mucina de caracol. Es la única crema de esta noche."}:{n:"SKIN1004 Centella Cream",c:"capa fina · último paso",d:"Crema calmante de centella. Es la única crema de esta noche."}}
 function morningSteps(ms){
   const w=wd(ms),d=di(ms),st=[];
