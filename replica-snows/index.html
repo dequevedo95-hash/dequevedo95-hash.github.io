@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NOVEX — Beyond Limits | Motion Replica Study</title>
+<meta name="description" content="Self-contained motion-design replica study: scroll-choreographed landing hero built with original code and artwork.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Gabarito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#000100;
+  --purple:#50138d;
+  --purple-deep:#2a0a4d;
+  --orange:#ff6201;
+  --paper:#efefef;
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-io:cubic-bezier(.65,.05,.36,1);
+  --head-h:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:auto}
+html,body{background:var(--ink)}
+body{
+  font-family:"Gabarito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--paper);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--orange);color:#fff}
+img,svg{display:block;max-width:none}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ============ SCROLL TRACK + STICKY STAGE ============ */
+.track{position:relative;height:560vh}
+.stage{
+  position:sticky;top:0;height:100vh;height:100svh;
+  overflow:hidden;background:var(--ink);
+  isolation:isolate;
+}
+
+/* ============ SCENES ============ */
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform;pointer-events:none}
+.scene svg{width:100%;height:100%}
+.scene .zoom{position:absolute;inset:-4%;will-change:transform}
+.scene-a{opacity:1}
+
+/* falling leaves (ambient, own CSS shapes) */
+.leaves{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:3}
+.leaf{position:absolute;top:-4vh;width:14px;height:10px;border-radius:80% 4px 80% 4px;opacity:0;animation:drift linear infinite}
+.leaf.o{background:#ff7a1a}.leaf.r{background:#d63c14}.leaf.y{background:#ffb03a}.leaf.d{background:#a8230a}
+@keyframes drift{
+  0%{transform:translate3d(0,-4vh,0) rotate(0deg);opacity:0}
+  8%{opacity:.85}
+  50%{transform:translate3d(3.5vw,52vh,0) rotate(340deg)}
+  92%{opacity:.7}
+  100%{transform:translate3d(-2vw,106vh,0) rotate(680deg);opacity:0}
+}
+
+/* ============ HEADER (bar -> floating pill) ============ */
+.header{
+  position:absolute;z-index:40;
+  top:0;left:0;width:100%;height:var(--head-h);
+  display:flex;align-items:center;gap:26px;
+  padding:0 28px;
+  background:rgba(255,255,255,.96);
+  color:#14100c;
+  transform:translateY(-110%);
+  will-change:transform,width,left,top,border-radius;
+}
+.header .logo{display:flex;align-items:baseline;gap:2px;font-family:"Unbounded",sans-serif;font-weight:900;font-size:24px;letter-spacing:-.01em;line-height:1;white-space:nowrap}
+.header .logo .lg-a{color:var(--purple)}
+.header .logo .lg-b{color:var(--orange)}
+.header .logo .lg-arrow{color:var(--orange);font-size:15px;transform:translateY(-2px)}
+.nav{display:flex;gap:24px;margin-left:8px}
+.nav a{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#241f1c;opacity:.85;position:relative;padding:4px 0}
+.nav a::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--orange);transform:scaleX(0);transform-origin:right;transition:transform .45s var(--ease-out)}
+.nav a:hover{opacity:1}
+.nav a:hover::after{transform:scaleX(1);transform-origin:left}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.track-box{display:flex;align-items:stretch;height:38px;border:1.5px solid rgba(20,16,12,.16);border-radius:999px;overflow:hidden;background:#fff}
+.track-box input{border:0;outline:0;padding:0 6px 0 16px;width:128px;font:inherit;font-size:13px;color:#14100c;background:transparent}
+.track-box input::placeholder{color:rgba(20,16,12,.45)}
+.btn-track{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--orange);color:#fff;font-weight:700;font-size:12.5px;letter-spacing:.12em;
+  padding:0 18px;border-radius:999px;margin:3px;
+  transition:background .3s;
+  will-change:transform;
+}
+.btn-track:hover{background:var(--purple)}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(20,16,12,.16);display:grid;place-items:center;background:#fff;transition:border-color .3s,background .3s;flex:none}
+.icon-btn:hover{border-color:var(--purple);background:#f4eefb}
+.icon-btn svg{width:16px;height:16px;stroke:#14100c}
+
+/* ============ RIGHT RAIL (glass chips) ============ */
+.rail{position:absolute;z-index:30;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px}
+.chip{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px 10px 14px;border-radius:14px;
+  background:rgba(16,10,24,.38);border:1px solid rgba(255,255,255,.28);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:#fff;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  opacity:0;transform:translateX(34px);
+  transition:background .3s,transform .3s var(--ease-out);
+  will-change:transform,opacity;
+}
+.chip:hover{background:rgba(80,19,141,.55)}
+.chip .chip-ic{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
+.chip .chip-ic svg{width:14px;height:14px;stroke:#fff}
+.chip .chip-arrow{margin-left:2px;opacity:.75;font-size:13px}
+.chip .avatar{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#ffd9a8,#ff6201 72%);flex:none;border:2px solid rgba(255,255,255,.65)}
+
+/* ============ HEADLINES ============ */
+.h-wrap{position:absolute;z-index:20;left:4.2vw;bottom:6.5vh;pointer-events:none}
+.h1{
+  font-family:"Unbounded",sans-serif;font-weight:900;text-transform:uppercase;
+  font-size:clamp(44px,9.2vw,148px);line-height:.98;letter-spacing:-.005em;color:#fff;
+  text-shadow:0 6px 44px rgba(0,0,0,.35);
+}
+.h1 .line{display:block;overflow:hidden;padding-bottom:.08em;margin-bottom:-.08em}
+.h1 .ch{display:inline-block;transform:translateY(115%) rotate(4deg);will-change:transform}
+.h1 .ch.sp{width:.32em}
+
+/* scene-2 split headline */
+.h2{position:absolute;z-index:20;left:0;right:0;bottom:9vh;display:flex;align-items:flex-end;gap:2.2vw;padding:0 4.2vw;pointer-events:none}
+.h2 .word{
+  font-family:"Unbounded",sans-serif;font-weight:900;text-transform:uppercase;
+  font-size:clamp(38px,7.6vw,124px);line-height:1;color:#fff;white-space:nowrap;
+  text-shadow:0 6px 40px rgba(0,0,0,.35);will-change:transform,opacity;opacity:0;
+}
+.h2 .w-left{transform:translateX(-7vw)}
+.h2 .w-right{transform:translateX(7vw)}
+.h2 .spark{color:var(--orange);font-size:clamp(20px,2.6vw,42px);align-self:center;opacity:0;transform:scale(.2) rotate(-90deg);will-change:transform,opacity;text-shadow:0 0 24px rgba(255,98,1,.8)}
+.h2 .h2-note{
+  margin-left:auto;max-width:300px;font-size:clamp(13px,1.15vw,16.5px);line-height:1.45;font-weight:500;
+  color:rgba(255,255,255,.94);opacity:0;transform:translateY(26px);will-change:transform,opacity;
+  text-shadow:0 2px 18px rgba(0,0,0,.45);padding-bottom:.6em;
+}
+.h2 .h2-note strong{color:#fff;font-weight:700}
+
+/* giant travelling type (scene 3-4) */
+.giant{
+  position:absolute;z-index:15;top:56%;left:0;white-space:nowrap;pointer-events:none;
+  font-family:"Unbounded",sans-serif;font-weight:900;text-transform:uppercase;
+  font-size:clamp(90px,21vw,340px);line-height:1;letter-spacing:-.01em;color:#fff;
+  transform:translateX(108vw);will-change:transform;
+  text-shadow:0 10px 60px rgba(0,0,0,.28);
+}
+.giant .sep{color:var(--orange);font-size:.42em;vertical-align:.9em;margin:0 .35em;text-shadow:0 0 30px rgba(255,98,1,.9)}
+
+/* ============ MINI CARD + SCROLL CUE (scene 1) ============ */
+.mini-card{
+  position:absolute;z-index:25;right:4.2vw;bottom:6.5vh;width:158px;border-radius:16px;overflow:hidden;
+  background:rgba(255,255,255,.97);color:#171310;box-shadow:0 24px 50px rgba(0,0,0,.35);
+  opacity:0;transform:translateY(36px);will-change:transform,opacity;
+}
+.mini-card .mc-img{height:86px;background:linear-gradient(135deg,#50138d 0%,#8a2be2 45%,#ff6201 110%);position:relative;overflow:hidden}
+.mini-card .mc-img svg{position:absolute;right:-8px;bottom:-4px;width:104px;height:auto}
+.mini-card p{font-size:12.5px;font-weight:600;line-height:1.3;padding:10px 12px 12px}
+.mini-card p span{display:block;color:var(--orange);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-bottom:3px}
+.scroll-cue{
+  position:absolute;z-index:25;left:50%;bottom:5.2vh;transform:translateX(-50%);
+  width:52px;height:52px;border-radius:50%;border:1.5px solid rgba(255,255,255,.75);
+  display:grid;place-items:center;color:#fff;background:rgba(10,6,18,.25);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;will-change:opacity,transform;
+}
+.scroll-cue svg{width:18px;height:18px;stroke:#fff;animation:cueBob 1.9s ease-in-out infinite}
+@keyframes cueBob{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+
+/* floating badge on scene 2 */
+.float-badge{
+  position:absolute;z-index:22;left:56%;top:24%;width:104px;height:104px;pointer-events:none;
+  opacity:0;will-change:transform,opacity;
+}
+.float-badge .fb-ring{position:absolute;inset:0;animation:spin 14s linear infinite}
+.float-badge .fb-core{position:absolute;inset:32px;border-radius:50%;background:var(--orange);display:grid;place-items:center;color:#fff;font-family:"Unbounded",sans-serif;font-weight:900;font-size:15px;box-shadow:0 14px 34px rgba(255,98,1,.45)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.float-anim{animation:floaty 5.2s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+/* ============ STATS BAND (scene 4) ============ */
+.stats{
+  position:absolute;z-index:26;left:0;right:0;bottom:0;
+  display:grid;grid-template-columns:1.15fr .9fr 1.15fr .9fr 1.15fr;gap:10px;
+  padding:0 14px 14px;will-change:transform;transform:translateY(112%);
+}
+.stat{
+  border-radius:18px;padding:20px 20px 16px;min-height:128px;
+  display:flex;flex-direction:column;justify-content:flex-end;gap:4px;
+  background:linear-gradient(160deg,rgba(24,12,40,.72),rgba(24,12,40,.45));
+  border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:#fff;overflow:hidden;position:relative;
+  transform:translateY(46px);opacity:0;will-change:transform,opacity;
+}
+.stat .num{font-family:"Unbounded",sans-serif;font-weight:900;font-size:clamp(26px,3.2vw,46px);line-height:1;color:#fff}
+.stat .num em{font-style:normal;color:var(--orange)}
+.stat .lab{font-size:12.5px;font-weight:500;line-height:1.35;color:rgba(255,255,255,.85);max-width:180px}
+.stat.tile-img{padding:0;background:#1c0f30}
+.stat.tile-img svg{position:absolute;inset:0;width:100%;height:100%}
+.stat .tile-tag{position:absolute;left:14px;bottom:12px;z-index:2;font-family:"Unbounded",sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+
+/* progress hint while replica plays */
+.hint{
+  position:absolute;z-index:35;left:50%;bottom:14px;transform:translateX(-50%);
+  font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.75);
+  opacity:0;pointer-events:none;transition:opacity .6s;
+}
+
+/* ============ FOOTER (after the experience) ============ */
+.footer{background:#07040d;color:rgba(239,239,239,.72);padding:56px 6vw 44px;font-size:13.5px;line-height:1.6}
+.footer .f-logo{font-family:"Unbounded",sans-serif;font-weight:900;font-size:20px;color:#fff;margin-bottom:10px}
+.footer .f-logo span{color:var(--orange)}
+.footer p{max-width:560px}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1080px){
+  .nav{display:none}
+  .track-box input{width:86px}
+}
+@media (max-width:860px){
+  .rail{display:none}
+  .mini-card{display:none}
+  .stats{grid-template-columns:1fr 1fr;padding:0 10px 10px;gap:8px}
+  .stat{min-height:104px;padding:14px}
+  .stat.hide-m{display:none}
+  .h2{flex-wrap:wrap;bottom:20vh}
+  .h2 .h2-note{margin-left:0;max-width:250px}
+  .header{gap:14px;padding:0 16px}
+  .float-badge{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  .leaf,.scroll-cue svg,.float-badge .fb-ring,.float-anim{animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="track" id="track">
+  <div class="stage" id="stage">
+
+    <!-- ================= SCENE A : three-quarter van, autumn road ================= -->
+    <section class="scene scene-a" data-scene="a">
+      <div class="zoom">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="skyA" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffd9a0"/><stop offset=".45" stop-color="#ffb35c"/><stop offset="1" stop-color="#ff7a2a"/>
+          </linearGradient>
+          <radialGradient id="sunA" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#fff3cf" stop-opacity=".95"/><stop offset=".55" stop-color="#ffce7a" stop-opacity=".45"/><stop offset="1" stop-color="#ffce7a" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="roadA" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5a4a52"/><stop offset="1" stop-color="#2c2430"/>
+          </linearGradient>
+          <linearGradient id="vanBodyA" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#eef0f4"/><stop offset="1" stop-color="#d9dde6"/>
+          </linearGradient>
+          <linearGradient id="glassA" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3a2b52"/><stop offset=".5" stop-color="#171126"/><stop offset="1" stop-color="#241640"/>
+          </linearGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#skyA)"/>
+        <circle cx="215" cy="180" r="230" fill="url(#sunA)"/>
+        <!-- distant canopy -->
+        <g fill="#c33d10" opacity=".8">
+          <circle cx="120" cy="230" r="90"/><circle cx="330" cy="200" r="110"/><circle cx="560" cy="215" r="95"/>
+          <circle cx="820" cy="205" r="105"/><circle cx="1060" cy="215" r="115"/><circle cx="1230" cy="235" r="90"/>
+        </g>
+        <g fill="#e85d16" opacity=".85">
+          <circle cx="230" cy="255" r="80"/><circle cx="470" cy="245" r="88"/><circle cx="700" cy="250" r="82"/>
+          <circle cx="950" cy="248" r="90"/><circle cx="1150" cy="260" r="84"/>
+        </g>
+        <g fill="#8f2408" opacity=".55">
+          <rect x="105" y="240" width="10" height="150"/><rect x="455" y="250" width="10" height="140"/>
+          <rect x="935" y="255" width="10" height="135"/><rect x="1135" y="262" width="10" height="130"/>
+        </g>
+        <!-- road -->
+        <path d="M0 470 L1280 430 L1280 720 L0 720 Z" fill="url(#roadA)"/>
+        <path d="M0 560 L1280 520" stroke="#f7b731" stroke-width="7" stroke-dasharray="46 30" opacity=".9"/>
+        <path d="M0 585 L1280 545" stroke="#f7b731" stroke-width="7" stroke-dasharray="46 30" opacity=".9"/>
+        <!-- fallen leaves on road -->
+        <g fill="#ff8a2a" opacity=".8">
+          <ellipse cx="180" cy="640" rx="13" ry="6" transform="rotate(-18 180 640)"/><ellipse cx="420" cy="676" rx="15" ry="7" transform="rotate(12 420 676)"/>
+          <ellipse cx="700" cy="650" rx="12" ry="6" transform="rotate(-30 700 650)"/><ellipse cx="980" cy="682" rx="16" ry="7" transform="rotate(20 980 682)"/>
+          <ellipse cx="1150" cy="636" rx="12" ry="6" transform="rotate(-8 1150 636)"/>
+        </g>
+        <g fill="#d63c14" opacity=".75">
+          <ellipse cx="300" cy="700" rx="14" ry="6" transform="rotate(26 300 700)"/><ellipse cx="840" cy="700" rx="13" ry="6" transform="rotate(-14 840 700)"/>
+          <ellipse cx="560" cy="622" rx="11" ry="5" transform="rotate(40 560 622)"/>
+        </g>
+        <!-- soft shadow under van -->
+        <ellipse cx="520" cy="592" rx="330" ry="30" fill="#12061e" opacity=".38"/>
+        <!-- VAN (own stylised drawing, rear three-quarter) -->
+        <g>
+          <path d="M238 548 L252 330 Q256 268 322 258 L560 236 Q640 230 700 262 L806 316 Q838 332 840 372 L842 470 Q842 528 792 540 L700 552 L640 560 Q630 578 606 578 L470 578 Q448 578 442 560 L300 560 Q246 560 238 548 Z" fill="url(#vanBodyA)"/>
+          <path d="M640 252 L726 292 Q760 308 762 344 L764 420 L690 428 L676 320 Q668 276 640 252 Z" fill="url(#glassA)"/>
+          <path d="M268 330 L560 306 L566 452 L258 470 Q252 392 268 330 Z" fill="#f7f8fa"/>
+          <path d="M268 330 L560 306 L562 340 L264 362 Z" fill="#e7eaf0"/>
+          <rect x="252" y="470" width="590" height="10" fill="#c9cedb" opacity=".7"/>
+          <circle cx="700" cy="516" r="13" fill="#0e2a38"/><circle cx="700" cy="516" r="8.5" fill="#39d0d8"/><circle cx="700" cy="516" r="3.4" fill="#bffcff"/>
+          <rect x="812" y="392" width="10" height="52" rx="5" fill="#e8ecf3"/>
+          <rect x="812" y="392" width="10" height="52" rx="5" fill="#ff6201" opacity=".28"/>
+          <!-- livery -->
+          <text x="308" y="428" font-family="Unbounded, sans-serif" font-weight="900" font-size="64" letter-spacing="-1"><tspan fill="#50138d">NOV</tspan><tspan fill="#ff6201">EX</tspan></text>
+          <text x="312" y="458" font-family="Gabarito, sans-serif" font-weight="600" font-size="17" fill="#5b6472" letter-spacing="3">EXPRESS · AUTONOMOUS</text>
+          <rect x="566" y="470" width="276" height="8" fill="#50138d" opacity=".9"/>
+          <rect x="566" y="478" width="276" height="5" fill="#ff6201"/>
+          <!-- wheels -->
+          <g>
+            <circle cx="336" cy="556" r="47" fill="#14101c"/><circle cx="336" cy="556" r="30" fill="#232032"/><circle cx="336" cy="556" r="13" fill="#9aa3b5"/>
+            <circle cx="742" cy="540" r="47" fill="#14101c"/><circle cx="742" cy="540" r="30" fill="#232032"/><circle cx="742" cy="540" r="13" fill="#9aa3b5"/>
+          </g>
+          <path d="M252 330 Q256 268 322 258 L560 236" fill="none" stroke="#ffffff" stroke-width="5" opacity=".8"/>
+        </g>
+        <!-- foreground leaf blur accents -->
+        <g fill="#ff7a1a" opacity=".5">
+          <ellipse cx="90" cy="660" rx="46" ry="20" transform="rotate(-24 90 660)"/><ellipse cx="1210" cy="690" rx="52" ry="22" transform="rotate(16 1210 690)"/>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <!-- ================= SCENE B : front view ================= -->
+    <section class="scene scene-b" data-scene="b">
+      <div class="zoom">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="skyB" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffe3ae"/><stop offset=".5" stop-color="#ffb35c"/><stop offset="1" stop-color="#ff8426"/>
+          </linearGradient>
+          <linearGradient id="roadB" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#66525c"/><stop offset="1" stop-color="#241b2a"/>
+          </linearGradient>
+          <linearGradient id="vanBodyB" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dde1ea"/>
+          </linearGradient>
+          <linearGradient id="glassB" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#31234f"/><stop offset="1" stop-color="#120b22"/>
+          </linearGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#skyB)"/>
+        <circle cx="640" cy="330" r="330" fill="#ffce7a" opacity=".38"/>
+        <!-- tree walls -->
+        <g fill="#c33d10">
+          <circle cx="90" cy="300" r="150"/><circle cx="230" cy="230" r="130"/><circle cx="1060" cy="230" r="130"/><circle cx="1200" cy="300" r="150"/>
+        </g>
+        <g fill="#e85d16">
+          <circle cx="170" cy="330" r="120"/><circle cx="330" cy="290" r="105"/><circle cx="950" cy="290" r="105"/><circle cx="1110" cy="330" r="120"/>
+        </g>
+        <g fill="#ff8a2a" opacity=".9">
+          <circle cx="80" cy="420" r="90"/><circle cx="1200" cy="420" r="90"/><circle cx="420" cy="320" r="80"/><circle cx="860" cy="320" r="80"/>
+        </g>
+        <!-- road to horizon -->
+        <path d="M470 720 L612 428 L668 428 L810 720 Z" fill="url(#roadB)"/>
+        <path d="M634 720 L638 428 L642 428 L646 720 Z" fill="#f7b731" opacity=".92"/>
+        <!-- van front -->
+        <ellipse cx="640" cy="640" rx="240" ry="22" fill="#12061e" opacity=".4"/>
+        <g>
+          <path d="M428 640 L436 396 Q440 322 520 306 L760 306 Q840 322 844 396 L852 640 Q852 664 828 664 L452 664 Q428 664 428 640 Z" fill="url(#vanBodyB)"/>
+          <path d="M472 470 L484 372 Q488 338 528 332 L752 332 Q792 338 796 372 L808 470 Q700 448 640 448 Q580 448 472 470 Z" fill="url(#glassB)"/>
+          <path d="M500 420 L640 338 L780 420" fill="none" stroke="#5a48a0" stroke-width="4" opacity=".6"/>
+          <rect x="470" y="486" width="340" height="7" fill="#50138d"/>
+          <rect x="470" y="493" width="340" height="4" fill="#ff6201"/>
+          <circle cx="640" cy="556" r="34" fill="#0e2a38"/><circle cx="640" cy="556" r="24" fill="#123c4a"/><circle cx="640" cy="556" r="16.5" fill="#39d0d8"/><circle cx="640" cy="556" r="6.5" fill="#d8feff"/>
+          <rect x="452" y="520" width="13" height="66" rx="6.5" fill="#eef1f6"/><rect x="815" y="520" width="13" height="66" rx="6.5" fill="#eef1f6"/>
+          <text x="640" y="676" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="900" font-size="27"><tspan fill="#50138d">NOV</tspan><tspan fill="#ff6201">EX</tspan></text>
+          <path d="M436 396 Q440 322 520 306 L760 306" fill="none" stroke="#fff" stroke-width="5" opacity=".8"/>
+        </g>
+        <g fill="#ff8a2a" opacity=".75">
+          <ellipse cx="150" cy="600" rx="16" ry="8" transform="rotate(-20 150 600)"/><ellipse cx="1130" cy="620" rx="18" ry="8" transform="rotate(14 1130 620)"/>
+          <ellipse cx="240" cy="680" rx="14" ry="7" transform="rotate(30 240 680)"/><ellipse cx="1020" cy="690" rx="15" ry="7" transform="rotate(-24 1020 690)"/>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <!-- ================= SCENE C : top view, drone on van ================= -->
+    <section class="scene scene-c" data-scene="c">
+      <div class="zoom">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="roadC" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#4c3d49"/><stop offset="1" stop-color="#241b2a"/>
+          </linearGradient>
+          <linearGradient id="vanTopC" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe3ec"/>
+          </linearGradient>
+        </defs>
+        <rect width="1280" height="720" fill="#b23a0e"/>
+        <!-- canopy texture -->
+        <g fill="#d64f12">
+          <circle cx="140" cy="110" r="90"/><circle cx="360" cy="70" r="80"/><circle cx="1120" cy="90" r="95"/><circle cx="900" cy="60" r="75"/>
+          <circle cx="120" cy="600" r="95"/><circle cx="330" cy="660" r="85"/><circle cx="1150" cy="620" r="90"/><circle cx="920" cy="670" r="80"/>
+        </g>
+        <g fill="#e8701c" opacity=".9">
+          <circle cx="230" cy="150" r="66"/><circle cx="1020" cy="150" r="70"/><circle cx="220" cy="540" r="62"/><circle cx="1040" cy="540" r="66"/>
+          <circle cx="60" cy="330" r="70"/><circle cx="1220" cy="330" r="70"/>
+        </g>
+        <g fill="#8f2408" opacity=".6">
+          <circle cx="170" cy="220" r="40"/><circle cx="1110" cy="230" r="42"/><circle cx="180" cy="430" r="38"/><circle cx="1100" cy="440" r="40"/>
+        </g>
+        <!-- diagonal road -->
+        <path d="M180 720 L760 0 L1010 0 L430 720 Z" fill="url(#roadC)"/>
+        <path d="M300 720 L880 0" stroke="#f7b731" stroke-width="8" stroke-dasharray="52 36" opacity=".9"/>
+        <!-- van top view -->
+        <g transform="rotate(40 640 380)">
+          <rect x="470" y="180" width="340" height="400" rx="72" fill="url(#vanTopC)"/>
+          <path d="M486 300 Q640 262 794 300 L794 372 Q640 336 486 372 Z" fill="#171126"/>
+          <rect x="520" y="420" width="240" height="118" rx="16" fill="#241a38"/>
+          <rect x="536" y="436" width="208" height="86" rx="10" fill="#0d0819"/>
+          <rect x="470" y="556" width="340" height="10" fill="#50138d"/>
+          <rect x="470" y="566" width="340" height="6" fill="#ff6201"/>
+          <text x="640" y="248" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="900" font-size="34"><tspan fill="#50138d">NOV</tspan><tspan fill="#ff6201">EX</tspan></text>
+          <!-- drone docked on roof -->
+          <g transform="translate(640 470)">
+            <circle cx="-52" cy="-30" r="17" fill="none" stroke="#2b2438" stroke-width="6"/>
+            <circle cx="52" cy="-30" r="17" fill="none" stroke="#2b2438" stroke-width="6"/>
+            <circle cx="-52" cy="34" r="17" fill="none" stroke="#2b2438" stroke-width="6"/>
+            <circle cx="52" cy="34" r="17" fill="none" stroke="#2b2438" stroke-width="6"/>
+            <rect x="-27" y="-18" width="54" height="42" rx="12" fill="#f2f4f8"/>
+            <circle cx="0" cy="2" r="8" fill="#39d0d8"/>
+            <circle cx="-52" cy="-30" r="4" fill="#ff6201"/><circle cx="52" cy="34" r="4" fill="#ff6201"/>
+          </g>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <!-- ================= SCENE D : aerial drone with parcel ================= -->
+    <section class="scene scene-d" data-scene="d">
+      <div class="zoom">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="skyD" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffca7a"/><stop offset=".35" stop-color="#ff9a3c"/><stop offset="1" stop-color="#e85d16"/>
+          </linearGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#skyD)"/>
+        <!-- rolling canopy hills -->
+        <path d="M0 300 Q240 210 520 268 Q820 330 1040 262 Q1180 220 1280 258 L1280 720 L0 720 Z" fill="#c33d10"/>
+        <path d="M0 400 Q300 320 620 380 Q940 440 1280 360 L1280 720 L0 720 Z" fill="#a82c0a"/>
+        <g fill="#e85d16" opacity=".85">
+          <circle cx="160" cy="430" r="70"/><circle cx="380" cy="470" r="82"/><circle cx="640" cy="450" r="76"/><circle cx="900" cy="478" r="84"/><circle cx="1140" cy="440" r="72"/>
+        </g>
+        <g fill="#ff8a2a" opacity=".8">
+          <circle cx="260" cy="540" r="66"/><circle cx="520" cy="560" r="72"/><circle cx="790" cy="548" r="68"/><circle cx="1030" cy="566" r="70"/>
+        </g>
+        <!-- river of light -->
+        <path d="M880 720 Q960 560 900 470 Q850 396 950 300" fill="none" stroke="#ffd9a0" stroke-width="16" opacity=".55" stroke-linecap="round"/>
+        <!-- drone carrying parcel -->
+        <g class="drone-float">
+          <g transform="translate(640 218)">
+            <line x1="-30" y1="34" x2="-18" y2="118" stroke="#2b2438" stroke-width="5"/>
+            <line x1="30" y1="34" x2="18" y2="118" stroke="#2b2438" stroke-width="5"/>
+            <g stroke="#2b2438" stroke-width="7" fill="none">
+              <circle cx="-118" cy="-38" r="30"/><circle cx="118" cy="-38" r="30"/>
+              <circle cx="-118" cy="30" r="30"/><circle cx="118" cy="30" r="30"/>
+            </g>
+            <g fill="#ff3b30"><circle cx="-118" cy="-38" r="6"/><circle cx="118" cy="30" r="6"/></g>
+            <path d="M-118 -38 L-52 -8 M118 -38 L52 -8 M-118 30 L-52 22 M118 30 L52 22" stroke="#2b2438" stroke-width="8"/>
+            <rect x="-66" y="-26" width="132" height="66" rx="22" fill="#f4f6fa"/>
+            <rect x="-66" y="8" width="132" height="7" fill="#50138d"/>
+            <rect x="-66" y="15" width="132" height="4" fill="#ff6201"/>
+            <circle cx="0" cy="-2" r="13" fill="#0e2a38"/><circle cx="0" cy="-2" r="7.5" fill="#39d0d8"/>
+            <text x="0" y="-34" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="900" font-size="19"><tspan fill="#50138d">NOV</tspan><tspan fill="#ff6201">EX</tspan></text>
+            <!-- parcel -->
+            <g transform="translate(0 118)">
+              <rect x="-52" y="0" width="104" height="78" rx="6" fill="#c9974f"/>
+              <rect x="-52" y="0" width="104" height="16" fill="#b5853d"/>
+              <rect x="-7" y="0" width="14" height="78" fill="#a8742f"/>
+              <rect x="-38" y="30" width="46" height="30" rx="3" fill="#f4ead2"/>
+              <text x="-15" y="51" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="900" font-size="14" fill="#50138d">NX</text>
+            </g>
+          </g>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <!-- ambient leaves -->
+    <div class="leaves" aria-hidden="true">
+      <span class="leaf o" style="left:8%;animation-duration:11s;animation-delay:-2s"></span>
+      <span class="leaf r" style="left:22%;animation-duration:14s;animation-delay:-7s;width:11px"></span>
+      <span class="leaf y" style="left:47%;animation-duration:12s;animation-delay:-4s"></span>
+      <span class="leaf o" style="left:63%;animation-duration:15s;animation-delay:-9s;width:17px"></span>
+      <span class="leaf d" style="left:78%;animation-duration:10.5s;animation-delay:-1s"></span>
+      <span class="leaf r" style="left:90%;animation-duration:13s;animation-delay:-6s;width:12px"></span>
+    </div>
+
+    <!-- ================= HEADER ================= -->
+    <header class="header" id="header">
+      <a class="logo" href="#" aria-label="NOVEX home"><span class="lg-a">NOV</span><span class="lg-b">EX</span><span class="lg-arrow">▸▸</span></a>
+      <nav class="nav">
+        <a href="#">Shipping</a><a href="#">Tracking</a><a href="#">Design</a><a href="#">Locations</a><a href="#">Support</a>
+      </nav>
+      <div class="head-right">
+        <form class="track-box" id="trackForm">
+          <input type="text" placeholder="Tracking Number" aria-label="Tracking number">
+          <button class="btn-track magnetic" type="submit">TRACK</button>
+        </form>
+        <button class="icon-btn" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></button>
+        <button class="icon-btn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M4 8h16M4 16h16"/></svg></button>
+      </div>
+    </header>
+
+    <!-- ================= RIGHT RAIL ================= -->
+    <aside class="rail" id="rail" aria-hidden="true">
+      <button class="chip"><span class="chip-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h13"/></svg></span>Get a quote<span class="chip-arrow">›</span></button>
+      <button class="chip"><span class="chip-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 8l9-4 9 4v8l-9 4-9-4z"/><path d="M3 8l9 4 9-4M12 12v8"/></svg></span>Ship now<span class="chip-arrow">›</span></button>
+      <button class="chip"><span class="avatar"></span>Our support<span class="chip-arrow">›</span></button>
+    </aside>
+
+    <!-- ================= HEADLINE 1 ================= -->
+    <div class="h-wrap" id="h1wrap">
+      <h1 class="h1" id="h1" aria-label="Beyond Limits">
+        <span class="line" data-split>BEYOND</span>
+        <span class="line" data-split>LIMITS</span>
+      </h1>
+    </div>
+
+    <!-- ================= HEADLINE 2 ================= -->
+    <div class="h2" id="h2" aria-hidden="true">
+      <span class="word w-left" id="wLeft">Always</span>
+      <span class="spark" id="spark1">✦</span>
+      <span class="word w-right" id="wRight">Moving</span>
+      <span class="spark" id="spark2">✦</span>
+      <p class="h2-note" id="h2note"><strong>Across cities, across borders.</strong><br>We keep your world in motion, door to door.</p>
+    </div>
+
+    <!-- floating badge (scene 2) -->
+    <div class="float-badge" id="floatBadge" aria-hidden="true">
+      <div class="float-anim">
+        <svg class="fb-ring" viewBox="0 0 104 104">
+          <defs><path id="circPath" d="M52 52 m-44 0 a44 44 0 1 1 88 0 a44 44 0 1 1 -88 0"/></defs>
+          <text font-family="Gabarito, sans-serif" font-size="10.5" font-weight="700" letter-spacing="2.6" fill="#ffffff"><textPath href="#circPath">DOOR TO DOOR • ON TIME • DOOR TO DOOR • </textPath></text>
+        </svg>
+        <div class="fb-core">24/7</div>
+      </div>
+    </div>
+
+    <!-- ================= GIANT TYPE ================= -->
+    <div class="giant" id="giant" aria-hidden="true">Delivering Tomorrow<span class="sep">✦</span>Delivering Tomorrow</div>
+
+    <!-- ================= MINI CARD + CUE ================= -->
+    <aside class="mini-card" id="miniCard">
+      <div class="mc-img">
+        <svg viewBox="0 0 120 70"><rect x="14" y="18" width="72" height="42" rx="12" fill="#f4f6fa"/><path d="M24 30 Q60 20 86 30 L86 42 Q60 34 24 42Z" fill="#171126"/><circle cx="88" cy="48" r="4.5" fill="#39d0d8"/><circle cx="30" cy="58" r="8" fill="#14101c"/><circle cx="72" cy="58" r="8" fill="#14101c"/><text x="30" y="46" font-family="Unbounded, sans-serif" font-weight="900" font-size="12" fill="#50138d">NX</text></svg>
+      </div>
+      <p><span>New</span>The New Power Move.</p>
+    </aside>
+    <button class="scroll-cue" id="scrollCue" aria-label="Scroll down">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 4v15M5 13l7 7 7-7"/></svg>
+    </button>
+
+    <!-- ================= STATS BAND ================= -->
+    <div class="stats" id="stats" aria-hidden="true">
+      <div class="stat" data-tile><div class="num"><span data-count="220">0</span><em>+</em></div><div class="lab">Countries &amp; territories served</div></div>
+      <div class="stat tile-img" data-tile>
+        <svg viewBox="0 0 300 160" preserveAspectRatio="xMidYMid slice"><rect width="300" height="160" fill="#2a0a4d"/><circle cx="248" cy="26" r="60" fill="#ff6201" opacity=".55"/><path d="M0 118 L300 96 L300 160 L0 160Z" fill="#171126"/><g transform="translate(58 44)"><rect x="0" y="0" width="130" height="66" rx="18" fill="#f4f6fa"/><path d="M10 14 Q65 4 120 14 L120 30 Q65 20 10 30Z" fill="#171126"/><circle cx="126" cy="44" r="4" fill="#39d0d8"/><circle cx="28" cy="62" r="11" fill="#14101c"/><circle cx="102" cy="62" r="11" fill="#14101c"/><text x="16" y="52" font-family="Unbounded, sans-serif" font-weight="900" font-size="17" fill="#50138d">NX</text></g></svg>
+        <span class="tile-tag">Ground fleet</span>
+      </div>
+      <div class="stat" data-tile><div class="num"><span data-count="18">0</span><em>M+</em></div><div class="lab">Packages shipped daily</div></div>
+      <div class="stat tile-img hide-m" data-tile>
+        <svg viewBox="0 0 300 160" preserveAspectRatio="xMidYMid slice"><rect width="300" height="160" fill="#50138d"/><g fill="#ff6201" opacity=".8"><circle cx="40" cy="130" r="46"/><circle cx="268" cy="24" r="38"/></g><text x="150" y="98" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="900" font-size="44"><tspan fill="#ffffff">NOV</tspan><tspan fill="#ff6201">EX</tspan></text></svg>
+        <span class="tile-tag">Est. 2026</span>
+      </div>
+      <div class="stat" data-tile><div class="num"><span data-count="72">0</span><em>h</em></div><div class="lab">Coast-to-coast standard delivery</div></div>
+    </div>
+
+    <div class="hint" id="hint">Scroll</div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="f-logo">NOV<span>EX</span></div>
+  <p>NOVEX is a fictional brand created for this study. This page is an independent motion-design replica exercise: all code, artwork and copy are original, built to reproduce the choreography of a public Figma animation preview (composition, timing and easing) without using any of its source files.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var stage = document.getElementById("stage");
+  var track = document.getElementById("track");
+
+  /* ---------- helpers ---------- */
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function seg(p,a,b){ return clamp((p-a)/(b-a),0,1); }
+  function easeOut(t){ return 1-Math.pow(1-t,4); }
+  function easeIO(t){ return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+  function easeOutBack(t){ var c=1.30158; return 1+ (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); }
+
+  /* ---------- split headline into chars ---------- */
+  var chars=[];
+  document.querySelectorAll("[data-split]").forEach(function(line){
+    var text=line.textContent; line.textContent="";
+    text.split("").forEach(function(c){
+      var s=document.createElement("span");
+      s.className="ch"+(c===" "?" sp":"");
+      s.textContent= c===" " ? "\u00A0" : c;
+      line.appendChild(s); chars.push(s);
+    });
+  });
+  var NCH=chars.length;
+
+  /* ---------- elements ---------- */
+  var header=document.getElementById("header"),
+      rail=document.getElementById("rail"),
+      chips=rail.querySelectorAll(".chip"),
+      sceneA=document.querySelector(".scene-a"), zoomA=sceneA.querySelector(".zoom"),
+      sceneB=document.querySelector(".scene-b"), zoomB=sceneB.querySelector(".zoom"),
+      sceneC=document.querySelector(".scene-c"), zoomC=sceneC.querySelector(".zoom"),
+      sceneD=document.querySelector(".scene-d"), zoomD=sceneD.querySelector(".zoom"),
+      h1wrap=document.getElementById("h1wrap"),
+      wLeft=document.getElementById("wLeft"), wRight=document.getElementById("wRight"),
+      spark1=document.getElementById("spark1"), spark2=document.getElementById("spark2"),
+      h2note=document.getElementById("h2note"),
+      badge=document.getElementById("floatBadge"),
+      giant=document.getElementById("giant"),
+      miniCard=document.getElementById("miniCard"),
+      cue=document.getElementById("scrollCue"),
+      stats=document.getElementById("stats"),
+      tiles=stats.querySelectorAll("[data-tile]"),
+      hint=document.getElementById("hint");
+
+  /* ---------- intro timeline (mirrors the video's opening seconds) ---------- */
+  var introStart=performance.now();
+  var introDone=false;
+  function introState(now){
+    var t=(now-introStart)/1000;
+    // header drops in
+    var hp=easeOut(clamp(t/0.7,0,1));
+    header.style.transform="translateY("+(-110+110*hp)+"%)";
+    // scene A settle zoom 1.18 -> 1 over 2.4s
+    var zs=easeOut(clamp(t/2.4,0,1));
+    introZoom=lerp(1.18,1,zs);
+    // headline chars in: start .35s, 55ms stagger, .75s each
+    for(var i=0;i<NCH;i++){
+      var lt=clamp((t-0.35-i*0.055)/0.75,0,1), e=easeOut(lt);
+      chars[i].style.transform="translateY("+((1-e)*115)+"%) rotate("+((1-e)*4)+"deg)";
+    }
+    // rail chips
+    chips.forEach(function(chip,i){
+      var ct=easeOut(clamp((t-0.95-i*0.13)/0.6,0,1));
+      chip.style.opacity=ct; chip.style.transform="translateX("+((1-ct)*34)+"px)";
+    });
+    // mini card + cue
+    var mc=easeOut(clamp((t-1.15)/0.65,0,1));
+    miniCard.style.opacity=mc; miniCard.style.transform="translateY("+((1-mc)*36)+"px)";
+    var cu=easeOut(clamp((t-1.35)/0.6,0,1));
+    cue.style.opacity=cu;
+    hint.style.opacity = t>1.6 && t<6 ? .9 : 0;
+    if(t>2.6){ introDone=true; }
+  }
+  var introZoom=1.18;
+
+  /* ---------- counters ---------- */
+  var counted=false;
+  function runCounters(){
+    if(counted) return; counted=true;
+    document.querySelectorAll("[data-count]").forEach(function(el){
+      var target=+el.getAttribute("data-count"), t0=performance.now();
+      (function tick(now){
+        var k=clamp((now-t0)/1300,0,1);
+        el.textContent=Math.round(target*easeOut(k));
+        if(k<1) requestAnimationFrame(tick);
+      })(t0);
+    });
+  }
+
+  /* ---------- scroll choreography ---------- */
+  var target=0, shown=0;
+  function readTarget(){
+    var r=track.getBoundingClientRect();
+    var total=r.height-window.innerHeight;
+    target=clamp(-r.top/total,0,1);
+  }
+  window.addEventListener("scroll",readTarget,{passive:true});
+  window.addEventListener("resize",readTarget);
+  readTarget();
+
+  function apply(p, now){
+    if(!introDone) introState(now);
+    var hp = easeIO(seg(p,0.05,0.20));            // header bar -> pill
+    var vw = window.innerWidth;
+    if(introDone || true){
+      // header geometry (keeps intro translateY until pill phase takes over)
+      var pillW = Math.min(880, vw*0.94);
+      var w = lerp(vw, pillW, hp);
+      header.style.width=w+"px";
+      header.style.left=lerp(0,(vw-w)/2,hp)+"px";
+      header.style.top=lerp(0,14,hp)+"px";
+      header.style.borderRadius=lerp(0,999,hp)+"px";
+      header.style.boxShadow = hp>0.02 ? "0 18px 44px rgba(5,0,16,"+(0.28*hp)+")" : "none";
+      if(p>0.001 && !introDone){ introDone=true; header.style.transform="translateY(0)"; }
+      if(introDone) header.style.transform="translateY(0)";
+    }
+
+    /* Scene A : slow push-in, then out */
+    var aOut=seg(p,0.13,0.32);
+    sceneA.style.opacity=1-aOut;
+    var aScale=introZoom + seg(p,0,0.16)*0.10;
+    zoomA.style.transform="scale("+aScale+") translateY("+(-seg(p,0,0.16)*2.2)+"%)";
+
+    /* Headline 1 chars out (staggered, as segment 1 leaves) */
+    if(introDone){
+      var out=seg(p,0.09,0.27);
+      for(var i=0;i<NCH;i++){
+        var lt=clamp((out*(1+ (NCH-1)*0.045) - i*0.045),0,1), e=easeIO(lt);
+        chars[i].style.transform="translateY("+(-e*118)+"%) rotate("+(-e*3)+"deg)";
+      }
+      h1wrap.style.opacity=1-seg(p,0.24,0.30);
+    }
+
+    /* mini card + cue leave early */
+    var mcOut=seg(p,0.04,0.13);
+    if(introDone){
+      miniCard.style.opacity=1-mcOut;
+      miniCard.style.transform="translateY("+(mcOut*44)+"px)";
+      cue.style.opacity=1-seg(p,0.02,0.09);
+    }
+    cue.style.pointerEvents = p<0.05 ? "auto":"none";
+
+    /* rail chips dim slightly after first act */
+    rail.style.opacity=1-seg(p,0.55,0.7)*0.35;
+
+    /* Scene B in */
+    var bIn=seg(p,0.17,0.36), bOut=seg(p,0.52,0.68);
+    sceneB.style.opacity=bIn*(1-bOut);
+    zoomB.style.transform="scale("+lerp(1.12,1.0,easeOut(bIn))*(1+bOut*0.05)+") translateY("+(seg(p,0.2,0.66)*-1.6)+"%)";
+
+    /* Headline 2 choreography */
+    var h2in=easeOut(seg(p,0.30,0.44));
+    wLeft.style.opacity=h2in;  wLeft.style.transform="translateX("+((1-h2in)*-7)+"vw)";
+    wRight.style.opacity=h2in; wRight.style.transform="translateX("+((1-h2in)*7)+"vw)";
+    var sp=easeOutBack(clamp(seg(p,0.38,0.48),0,1));
+    spark1.style.opacity=clamp(sp,0,1); spark2.style.opacity=clamp(sp,0,1);
+    var spT="scale("+(0.2+0.8*sp)+") rotate("+(-90+90*sp)+"deg)";
+    spark1.style.transform=spT; spark2.style.transform=spT;
+    var nt=easeOut(seg(p,0.38,0.50));
+    h2note.style.opacity=nt; h2note.style.transform="translateY("+((1-nt)*26)+"px)";
+    var h2out=seg(p,0.47,0.58);
+    document.getElementById("h2").style.opacity=1-h2out;
+    document.getElementById("h2").style.transform="translateY("+(-h2out*36)+"px)";
+
+    /* floating badge (scene 2 garnish) */
+    var bg=easeOut(seg(p,0.34,0.46))*(1-seg(p,0.50,0.60));
+    badge.style.opacity=bg;
+    badge.style.transform="translateY("+((1-easeOut(seg(p,0.34,0.46)))*20)+"px)";
+
+    /* Scene C in */
+    var cIn=seg(p,0.56,0.72), cOut=seg(p,0.76,0.89);
+    sceneC.style.opacity=cIn*(1-cOut);
+    zoomC.style.transform="scale("+lerp(1.13,1.02,easeOut(cIn))*(1+cOut*0.04)+")";
+
+    /* Giant travelling type : enters right, exits left across acts 3-4 */
+    var gx=seg(p,0.52,0.99);
+    giant.style.transform="translateX("+lerp(106,-178,easeIO(gx)*0+gx)+"vw)";
+    giant.style.opacity = (p>0.50&&p<0.995)?1:0;
+
+    /* Scene D in */
+    var dIn=seg(p,0.79,0.91);
+    sceneD.style.opacity=dIn;
+    zoomD.style.transform="scale("+lerp(1.12,1.0,easeOut(dIn))+") translateY("+(seg(p,0.8,1)*-1.4)+"%)";
+
+    /* Stats band + tiles */
+    var st=seg(p,0.845,0.965);
+    stats.style.transform="translateY("+((1-easeOut(st))*112)+"%)";
+    tiles.forEach(function(tile,i){
+      var tt=easeOut(seg(p,0.85+i*0.018,0.965));
+      tile.style.opacity=tt;
+      tile.style.transform="translateY("+((1-tt)*46)+"px)";
+    });
+    if(st>0.45) runCounters();
+  }
+
+  function frame(now){
+    readTarget();
+    if(reduce){ shown=target; }
+    else { shown += (target-shown)*0.085; if(Math.abs(target-shown)<0.0004) shown=target; }
+    apply(shown, now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ---------- interactions ---------- */
+  document.getElementById("trackForm").addEventListener("submit",function(e){ e.preventDefault(); });
+  cue.addEventListener("click",function(){
+    window.scrollBy({top:window.innerHeight*1.15,behavior: reduce?"auto":"smooth"});
+  });
+  /* magnetic hover, pointer-fine only (like the piece's hover act) */
+  if(window.matchMedia("(pointer:fine)").matches && !reduce){
+    document.querySelectorAll(".magnetic").forEach(function(el){
+      el.addEventListener("mousemove",function(e){
+        var r=el.getBoundingClientRect();
+        var x=(e.clientX-r.left)/r.width-0.5, y=(e.clientY-r.top)/r.height-0.5;
+        el.style.transform="translate("+(x*7)+"px,"+(y*5)+"px)";
+      });
+      el.addEventListener("mouseleave",function(){ el.style.transform=""; });
+    });
+  }
+})();
+</script>
+</body>
+</html>
