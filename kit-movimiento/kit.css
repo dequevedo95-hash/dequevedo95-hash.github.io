@@ -1,0 +1,312 @@
+/* ============================================================
+   KIT DE COMPONENTES — Angel JC Photography
+   Base propia para páginas de una sola hoja de negocios locales.
+   Estilo de la casa: hero inmersivo «Portada Total», tipografía
+   editorial grande, navegación mínima, un solo botón principal,
+   movimiento cuidado y carga ligera en móvil.
+
+   CÓMO ADAPTARLO A CADA CLIENTE:
+   Cambia SOLO las variables de :root (colores y fuentes) según el
+   logo y la identidad del negocio. Los componentes se ajustan solos.
+   ============================================================ */
+
+:root{
+  /* — Identidad del negocio (cambiar por cliente) — */
+  --fondo:#FAF6EE;          /* fondo general */
+  --superficie:#FFFDF8;     /* tarjetas y bloques */
+  --tinta:#2A2521;          /* texto principal */
+  --tinta-suave:#6F6459;    /* texto secundario */
+  --acento:#C06B47;         /* color principal de la marca */
+  --acento-oscuro:#9E5233;  /* hover del acento */
+  --linea:rgba(42,37,33,.14);
+  --fuente-titulos:"Cormorant Garamond",Georgia,serif;
+  --fuente-cuerpo:"Quicksand",system-ui,sans-serif;
+  --fuente-firma:"Great Vibes",cursive;
+
+  /* — Sistema (normalmente no se toca) — */
+  --radio:18px;
+  --ancho:1180px;
+  --sombra:0 18px 40px rgba(42,37,33,.12);
+  --transicion:.45s cubic-bezier(.22,.8,.3,1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--fondo);color:var(--tinta);
+  font-family:var(--fuente-cuerpo);font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+img,video{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:min(var(--ancho),92%);margin-inline:auto}
+
+/* ---------- Movimiento de entrada (reveal) ---------- */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,.8,.3,1)}
+.reveal.visible{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  html{scroll-behavior:auto}
+}
+
+/* ---------- Botones ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:.6rem;
+  background:var(--acento);color:#fff;text-decoration:none;
+  font-weight:700;font-size:1rem;letter-spacing:.02em;
+  padding:.95rem 1.9rem;border-radius:999px;border:1px solid var(--acento);
+  transition:background var(--transicion),transform var(--transicion),color var(--transicion);
+}
+.btn:hover{background:var(--acento-oscuro);border-color:var(--acento-oscuro);transform:translateY(-2px)}
+.btn--fantasma{background:transparent;color:var(--tinta);border-color:var(--linea)}
+.btn--fantasma:hover{background:var(--tinta);color:var(--fondo);border-color:var(--tinta)}
+.btn--claro{background:var(--fondo);color:var(--tinta);border-color:var(--fondo)}
+.btn--claro:hover{background:#fff;color:var(--tinta)}
+
+/* ---------- Navegación mínima ---------- */
+.k-nav{
+  position:fixed;inset:0 0 auto 0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem min(4vw,2.5rem);
+  transition:background var(--transicion),box-shadow var(--transicion),padding var(--transicion);
+}
+.k-nav.con-fondo{background:color-mix(in srgb,var(--fondo) 88%,transparent);backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--linea);padding-top:.65rem;padding-bottom:.65rem}
+.k-nav .marca{display:flex;align-items:center;gap:.7rem;text-decoration:none;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem}
+.k-nav .marca img{width:40px;height:40px;object-fit:contain;border-radius:8px}
+.k-nav nav{display:flex;gap:1.6rem;align-items:center}
+.k-nav nav a{text-decoration:none;font-size:.92rem;font-weight:600;opacity:.9}
+.k-nav nav a:hover{opacity:1;color:var(--acento)}
+.k-nav .solo-cta nav a:not(.btn){display:none} /* variante: solo logo + botón */
+@media(max-width:720px){.k-nav nav a:not(.btn){display:none}}
+
+/* Selector de idioma ES/EN */
+.k-lang{display:inline-flex;border:1px solid var(--linea);border-radius:999px;overflow:hidden}
+.k-lang button{background:transparent;border:0;padding:.35rem .8rem;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--tinta-suave)}
+.k-lang button.activo{background:var(--tinta);color:var(--fondo)}
+
+/* ---------- HERO «PORTADA TOTAL» (foto) ---------- */
+.k-hero{
+  position:relative;min-height:100svh;display:flex;align-items:flex-end;
+  color:#fff;isolation:isolate;overflow:hidden;
+}
+.k-hero .fondo{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.k-hero::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(15,9,7,.34) 0%,rgba(15,9,7,.06) 38%,rgba(15,9,7,.62) 100%)}
+.k-hero .contenido{width:min(var(--ancho),92%);margin-inline:auto;padding:7.5rem 0 4.5rem}
+.k-hero .kicker{text-transform:uppercase;letter-spacing:.34em;font-size:.8rem;font-weight:700;opacity:.92}
+.k-hero h1{
+  font-family:var(--fuente-titulos);font-weight:600;line-height:.95;
+  font-size:clamp(3.4rem,11vw,8.5rem);letter-spacing:.01em;margin:.5rem 0 1rem;
+  text-wrap:balance;
+}
+.k-hero .bajada{max-width:34rem;font-size:clamp(1.02rem,2.4vw,1.25rem);opacity:.95}
+.k-hero .acciones{margin-top:1.8rem;display:flex;gap:.9rem;flex-wrap:wrap}
+/* Variante centrada */
+.k-hero--centro{align-items:center;text-align:center}
+.k-hero--centro .bajada{margin-inline:auto}
+.k-hero--centro .acciones{justify-content:center}
+/* La variante video usa el mismo markup: <video class="fondo" autoplay muted loop playsinline> */
+
+/* ---------- Banda en movimiento (marquee) ---------- */
+.k-marquee{background:var(--tinta);color:var(--fondo);overflow:hidden;padding:.85rem 0;white-space:nowrap}
+.k-marquee .pista{display:inline-flex;gap:0;animation:k-desliza 30s linear infinite}
+.k-marquee span{padding-right:1.2rem;font-weight:600}
+.k-marquee i{color:var(--acento);font-style:normal;padding-right:1.2rem}
+@keyframes k-desliza{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.k-marquee .pista{animation:none}}
+
+/* ---------- Encabezado de sección editorial ---------- */
+.k-sec{padding:clamp(4rem,9vw,7rem) 0}
+.k-sec--alt{background:var(--superficie)}
+.k-sec-head{max-width:46rem;margin-bottom:2.6rem}
+.k-sec-head .kicker{color:var(--acento);text-transform:uppercase;letter-spacing:.3em;font-size:.78rem;font-weight:800}
+.k-sec-head h2{font-family:var(--fuente-titulos);font-weight:600;font-size:clamp(2.2rem,5.5vw,3.6rem);line-height:1.05;margin:.4rem 0 .7rem}
+.k-sec-head p{color:var(--tinta-suave)}
+.k-sec-head--centro{margin-inline:auto;text-align:center}
+
+/* ---------- Tarjetas de servicios ---------- */
+.k-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.2rem}
+.k-card{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden;transition:transform var(--transicion),box-shadow var(--transicion)}
+.k-card:hover{transform:translateY(-5px);box-shadow:var(--sombra)}
+.k-card img{width:100%;height:190px;object-fit:cover}
+.k-card .cuerpo{padding:1.4rem}
+.k-card h3{font-family:var(--fuente-titulos);font-size:1.55rem;font-weight:600;line-height:1.15;margin-bottom:.4rem}
+.k-card p{color:var(--tinta-suave);font-size:.96rem}
+.k-card .precio{margin-top:.8rem;font-weight:800;color:var(--acento)}
+
+/* ---------- Lista de menú / servicios con precios ---------- */
+.k-menu{columns:2;column-gap:3.5rem}
+.k-menu .item{break-inside:avoid;padding:.9rem 0;border-bottom:1px dashed var(--linea)}
+.k-menu .fila{display:flex;align-items:baseline;gap:.8rem}
+.k-menu .puntos{flex:1;border-bottom:2px dotted var(--linea);transform:translateY(-4px)}
+.k-menu h3{font-family:var(--fuente-titulos);font-size:1.35rem;font-weight:600}
+.k-menu .precio{font-weight:800;color:var(--acento);white-space:nowrap}
+.k-menu p{color:var(--tinta-suave);font-size:.94rem;margin-top:.15rem}
+@media(max-width:760px){.k-menu{columns:1}}
+
+/* ---------- Galería con flechas y contador ---------- */
+.k-gallery{position:relative;border-radius:var(--radio);overflow:hidden;background:var(--tinta)}
+.k-gallery .slide{display:none}
+.k-gallery .slide.activo{display:block}
+.k-gallery img{width:100%;height:min(68vh,560px);object-fit:cover}
+.k-gallery .flecha{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+  width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;
+  background:rgba(15,9,7,.45);color:#fff;font-size:1.3rem;line-height:1;
+  display:grid;place-items:center;transition:background var(--transicion);
+}
+.k-gallery .flecha:hover{background:var(--acento)}
+.k-gallery .antes{left:1rem}.k-gallery .despues{right:1rem}
+.k-gallery .contador{
+  position:absolute;right:1rem;bottom:1rem;z-index:3;color:#fff;
+  background:rgba(15,9,7,.5);padding:.25rem .8rem;border-radius:999px;font-size:.85rem;font-weight:700;
+}
+.k-gallery .pie{
+  position:absolute;left:1rem;bottom:1rem;z-index:3;color:#fff;font-weight:600;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);max-width:70%;
+}
+
+/* ---------- Precios / paquetes ---------- */
+.k-pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.2rem;align-items:stretch}
+.k-plan{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--radio);padding:1.8rem;display:flex;flex-direction:column}
+.k-plan.destacado{border-color:var(--acento);box-shadow:var(--sombra);position:relative}
+.k-plan .etiqueta{position:absolute;top:-.8rem;left:1.4rem;background:var(--acento);color:#fff;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .8rem;border-radius:999px}
+.k-plan h3{font-family:var(--fuente-titulos);font-size:1.6rem;font-weight:600}
+.k-plan .monto{font-size:2.1rem;font-weight:800;margin:.5rem 0 .2rem}
+.k-plan .monto small{font-size:.95rem;color:var(--tinta-suave);font-weight:600}
+.k-plan ul{list-style:none;margin:1rem 0 1.5rem;display:grid;gap:.5rem;color:var(--tinta-suave);font-size:.96rem}
+.k-plan ul li::before{content:"—";color:var(--acento);font-weight:800;margin-right:.55rem}
+.k-plan .btn{margin-top:auto;justify-content:center}
+
+/* ---------- Testimonios ---------- */
+.k-testis{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2rem}
+.k-testi{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--radio);padding:1.7rem}
+.k-testi .estrellas{color:var(--acento);letter-spacing:.25em;font-size:.9rem}
+.k-testi blockquote{font-family:var(--fuente-titulos);font-size:1.3rem;line-height:1.35;margin:.7rem 0 1rem}
+.k-testi .autor{font-weight:700;font-size:.92rem}
+.k-testi .autor small{display:block;color:var(--tinta-suave);font-weight:600}
+
+/* ---------- Horarios + contacto + mapa ---------- */
+.k-contacto{display:grid;grid-template-columns:1fr 1.2fr;gap:1.5rem;align-items:stretch}
+@media(max-width:820px){.k-contacto{grid-template-columns:1fr}}
+.k-datos{background:var(--tinta);color:var(--fondo);border-radius:var(--radio);padding:1.9rem}
+.k-datos h3{font-family:var(--fuente-titulos);font-size:1.7rem;font-weight:600;margin-bottom:1rem}
+.k-datos table{width:100%;border-collapse:collapse;font-size:.97rem}
+.k-datos td{padding:.42rem 0;border-bottom:1px solid rgba(255,255,255,.14)}
+.k-datos td:last-child{text-align:right;font-weight:700}
+.k-datos .linea-contacto{margin-top:1.1rem;display:grid;gap:.35rem;font-size:.97rem}
+.k-datos a{color:var(--fondo)}
+.k-mapa{border-radius:var(--radio);overflow:hidden;border:1px solid var(--linea);min-height:320px}
+.k-mapa iframe{width:100%;height:100%;min-height:320px;border:0}
+
+/* ---------- CTA final ---------- */
+.k-cta{background:var(--acento);color:#fff;text-align:center;padding:clamp(3.5rem,8vw,5.5rem) 0}
+.k-cta h2{font-family:var(--fuente-titulos);font-weight:600;font-size:clamp(2.1rem,5.5vw,3.4rem);line-height:1.08;margin-bottom:.8rem}
+.k-cta p{opacity:.92;max-width:36rem;margin:0 auto 1.8rem}
+
+/* ---------- Formulario simple ---------- */
+.k-form{display:grid;gap:.9rem;max-width:560px}
+.k-form label{font-weight:700;font-size:.9rem;display:grid;gap:.35rem}
+.k-form input,.k-form textarea,.k-form select{
+  font:inherit;padding:.8rem 1rem;border-radius:12px;border:1px solid var(--linea);
+  background:var(--superficie);color:var(--tinta);width:100%;
+}
+.k-form input:focus,.k-form textarea:focus,.k-form select:focus{outline:2px solid var(--acento);outline-offset:1px}
+
+/* ---------- Botón flotante de WhatsApp ---------- */
+.k-wa{
+  position:fixed;right:1.1rem;bottom:1.1rem;z-index:60;
+  background:#25D366;color:#fff;text-decoration:none;font-weight:800;
+  padding:.85rem 1.3rem;border-radius:999px;box-shadow:0 12px 28px rgba(0,0,0,.25);
+  display:inline-flex;align-items:center;gap:.5rem;font-size:.95rem;
+  transition:transform var(--transicion);
+}
+.k-wa:hover{transform:translateY(-3px)}
+
+/* ---------- Pie de página ---------- */
+.k-footer{background:var(--tinta);color:var(--fondo);padding:3rem 0 2.2rem;margin-top:0}
+.k-footer .fila{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:flex-start}
+.k-footer .firma{font-family:var(--fuente-firma);font-size:2rem;color:var(--acento)}
+.k-footer nav{display:flex;gap:1.4rem;flex-wrap:wrap}
+.k-footer nav a{text-decoration:none;font-size:.93rem;opacity:.9}
+.k-footer nav a:hover{opacity:1}
+.k-footer .legal{margin-top:2rem;padding-top:1.2rem;border-top:1px solid rgba(255,255,255,.15);font-size:.85rem;opacity:.75;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem}
+
+/* ============================================================
+   MOVIMIENTO EDITORIAL — patrones propios de la casa,
+   inspirados en el motion design editorial contemporáneo
+   (estudiados de material público, nada copiado).
+   Todo respeta «prefers-reduced-motion» y sale de las
+   mismas variables de :root.
+   ============================================================ */
+
+/* ---------- Titular que sube por líneas (o palabras) ----------
+   Uso por líneas:
+     <h2 class="k-titular">
+       <span class="linea"><span>Cocina de verdad,</span></span>
+       <span class="linea"><span>hecha en el momento</span></span>
+     </h2>
+   Por palabras: clase extra .k-titular--palabras y cada palabra
+   envuelta en <span class="palabra"><span>…</span></span>.
+   Nota: las líneas no llevan data-es/data-en (el cambio de
+   idioma reescribe el texto y rompería la máscara); el titular
+   grande se escribe en un idioma, como el del hero.          */
+.k-titular .linea{display:block;overflow:hidden;padding-bottom:.09em;margin-bottom:-.09em}
+.k-titular .linea>span{display:block;transform:translateY(118%);transition:transform .95s cubic-bezier(.22,.8,.3,1)}
+.k-titular .palabra{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.09em;margin-bottom:-.09em}
+.k-titular .palabra>span{display:inline-block;transform:translateY(118%);transition:transform .85s cubic-bezier(.22,.8,.3,1)}
+.k-titular.visible .linea>span,.k-titular.visible .palabra>span{transform:none}
+.k-titular .linea:nth-child(2)>span,.k-titular .palabra:nth-child(2)>span{transition-delay:.1s}
+.k-titular .linea:nth-child(3)>span,.k-titular .palabra:nth-child(3)>span{transition-delay:.2s}
+.k-titular .linea:nth-child(4)>span,.k-titular .palabra:nth-child(4)>span{transition-delay:.3s}
+.k-titular .linea:nth-child(5)>span,.k-titular .palabra:nth-child(5)>span{transition-delay:.4s}
+.k-titular .linea:nth-child(6)>span,.k-titular .palabra:nth-child(6)>span{transition-delay:.5s}
+
+/* ---------- Fondo que se acerca al hacer scroll ----------
+   <section class="k-hero k-zoom"> o un panel cualquiera con
+   clase .k-zoom y un hijo .fondo (o una <img>): el JS lo
+   escala de 1 a ~1.14 según avanza el scroll por la zona.   */
+.k-zoom{position:relative;overflow:hidden}
+.k-zoom>.fondo{position:absolute;inset:0;will-change:transform}
+.k-zoom>img{width:100%;height:100%;object-fit:cover;will-change:transform}
+
+/* ---------- Cifras que cuentan ----------
+   <div class="k-cifras"><div class="k-cifra">
+     <p class="num" data-contar="12">0</p>
+     <p class="rotulo">Años de experiencia</p>
+   </div>…</div>
+   Sufijo opcional: data-sufijo="+" o "%".                   */
+.k-cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1.4rem;text-align:center}
+.k-cifra .num{font-family:var(--fuente-titulos);font-weight:600;font-size:clamp(2.7rem,6vw,4.1rem);line-height:1;color:var(--acento)}
+.k-cifra .rotulo{margin-top:.4rem;color:var(--tinta-suave);font-weight:600;font-size:.96rem}
+
+/* ---------- Elemento flotante ----------
+   Para la foto del plato estrella, un distintivo o una
+   tarjeta pequeña sobre el hero: sube y baja suave, en bucle. */
+.k-flota{animation:k-flota 5.5s ease-in-out infinite alternate}
+@keyframes k-flota{from{transform:translateY(-7px) rotate(-.5deg)}to{transform:translateY(9px) rotate(.5deg)}}
+
+/* ---------- Botón magnético ----------
+   Clase extra en el botón principal: sigue un poco el cursor
+   y vuelve solo al salir. El JS lo activa solo con puntero
+   fino (ratón/trackpad); en táctil no hace nada.             */
+.k-magnetico{will-change:transform}
+
+/* ---------- Grupo que entra en cascada ----------
+   Los hijos aparecen escalonados al entrar en pantalla.
+   Sustituye a .reveal en los hijos (no combinar ambas).     */
+.k-cascada>*{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.22,.8,.3,1)}
+.k-cascada.visible>*{opacity:1;transform:none}
+.k-cascada>*:nth-child(2){transition-delay:.09s}
+.k-cascada>*:nth-child(3){transition-delay:.18s}
+.k-cascada>*:nth-child(4){transition-delay:.27s}
+.k-cascada>*:nth-child(5){transition-delay:.36s}
+.k-cascada>*:nth-child(6){transition-delay:.45s}
+.k-cascada>*:nth-child(7){transition-delay:.54s}
+.k-cascada>*:nth-child(8){transition-delay:.63s}
+
+@media (prefers-reduced-motion:reduce){
+  .k-titular .linea>span,.k-titular .palabra>span{transform:none;transition:none}
+  .k-cascada>*{opacity:1;transform:none;transition:none}
+  .k-flota{animation:none}
+}

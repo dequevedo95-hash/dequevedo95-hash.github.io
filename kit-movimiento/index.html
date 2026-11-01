@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Movimiento — patrones propios del kit</title>
+<meta name="description" content="Demo viva de los componentes de movimiento del kit propio: titular por líneas, fondo que se acerca, cifras que cuentan, elemento flotante, botón magnético y grupo en cascada.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .demo-hero{background:linear-gradient(160deg,#3a2c22 0%,#6d5846 45%,#9e5233 100%)}
+  .panel-plato{height:min(56vh,420px);border-radius:var(--radio);display:grid;place-items:center;color:#fff;text-align:center}
+  .panel-plato .fondo{background:linear-gradient(150deg,#532d20,#9e5233 55%,#b28c73)}
+  .chip-flota{display:inline-block;background:var(--fondo);color:var(--tinta);font-weight:800;padding:.75rem 1.4rem;border-radius:999px;box-shadow:var(--sombra)}
+  .demo-foto{height:190px;background:linear-gradient(150deg,#b28c73,#95614c)}
+  .demo-foto2{height:190px;background:linear-gradient(150deg,#8a927f,#6d5846)}
+  .demo-foto3{height:190px;background:linear-gradient(150deg,#c6ad92,#9e5233)}
+  .etiqueta-mov{position:relative;display:inline-block;background:var(--tinta);color:var(--fondo);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.04em;margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<header class="k-nav">
+  <a class="marca" href="#top">La Mesa · Demo</a>
+  <nav>
+    <a href="#cifras" data-es="El negocio" data-en="The place">El negocio</a>
+    <a href="#servicios" data-es="Servicios" data-en="Services">Servicios</a>
+    <span class="k-lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es" class="activo" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </span>
+    <a class="btn" href="#cierre" data-es="Reservar" data-en="Book now">Reservar</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- Hero: fondo que se acerca (.k-zoom) + titular por líneas (.k-titular)
+       + botón magnético (.k-magnetico) -->
+  <section class="k-hero k-zoom demo-hero">
+    <div class="fondo" aria-hidden="true" style="background:linear-gradient(160deg,#3a2c22,#6d5846 45%,#9e5233)"></div>
+    <div class="contenido">
+      <p class="kicker reveal" data-es="Cocina latina · Houston, TX" data-en="Latin kitchen · Houston, TX">Cocina latina · Houston, TX</p>
+      <h1 class="k-titular">
+        <span class="linea"><span>Cocina de verdad,</span></span>
+        <span class="linea"><span>hecha en el momento</span></span>
+      </h1>
+      <p class="bajada reveal" data-es="El fondo de esta portada se acerca poco a poco al bajar, el titular entra línea a línea y el botón te sigue un poco el cursor. Todo es código propio del kit." data-en="This cover's background slowly zooms in as you scroll, the headline rises line by line and the button follows your cursor a little. All of it is the kit's own code.">El fondo de esta portada se acerca poco a poco al bajar, el titular entra línea a línea y el botón te sigue un poco el cursor. Todo es código propio del kit.</p>
+      <div class="acciones reveal">
+        <a class="btn btn--claro k-magnetico" href="#servicios" data-es="Ver servicios" data-en="See services">Ver servicios</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="k-marquee" aria-hidden="true">
+    <div class="pista">
+      <span>Almuerzos <i>*</i> Cenas <i>*</i> Eventos privados <i>*</i> Para llevar <i>*</i> Postres de la casa <i>*</i>&nbsp;</span>
+      <span>Almuerzos <i>*</i> Cenas <i>*</i> Eventos privados <i>*</i> Para llevar <i>*</i> Postres de la casa <i>*</i>&nbsp;</span>
+    </div>
+  </div>
+
+  <!-- Cifras que cuentan (.k-cifras) -->
+  <section class="k-sec" id="cifras">
+    <div class="wrap">
+      <span class="etiqueta-mov">.k-cifras</span>
+      <div class="k-sec-head reveal">
+        <p class="kicker" data-es="El negocio en números" data-en="The place in numbers">El negocio en números</p>
+        <h2 data-es="Cifras que cuentan solas" data-en="Numbers that count themselves">Cifras que cuentan solas</h2>
+      </div>
+      <div class="k-cifras">
+        <div class="k-cifra"><p class="num" data-contar="12">0</p><p class="rotulo" data-es="Años de experiencia" data-en="Years of experience">Años de experiencia</p></div>
+        <div class="k-cifra"><p class="num" data-contar="48">0</p><p class="rotulo" data-es="Platos en el menú" data-en="Dishes on the menu">Platos en el menú</p></div>
+        <div class="k-cifra"><p class="num" data-contar="1200" data-sufijo="+">0</p><p class="rotulo" data-es="Clientes felices" data-en="Happy clients">Clientes felices</p></div>
+        <div class="k-cifra"><p class="num" data-contar="98" data-sufijo="%">0</p><p class="rotulo" data-es="Nos recomiendan" data-en="Would recommend us">Nos recomiendan</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grupo en cascada (.k-cascada) -->
+  <section class="k-sec k-sec--alt" id="servicios" style="padding-top:3rem">
+    <div class="wrap">
+      <span class="etiqueta-mov">.k-cascada</span>
+      <div class="k-sec-head reveal">
+        <p class="kicker" data-es="Lo que hacemos" data-en="What we do">Lo que hacemos</p>
+        <h2 data-es="Tarjetas que entran en cascada" data-en="Cards that cascade in">Tarjetas que entran en cascada</h2>
+      </div>
+      <div class="k-cards k-cascada">
+        <article class="k-card"><div class="demo-foto"></div><div class="cuerpo"><h3>Comer en el local</h3><p>Salón amplio, servicio a la mesa y el menú completo todo el día.</p><p class="precio">Desde $12</p></div></article>
+        <article class="k-card"><div class="demo-foto2"></div><div class="cuerpo"><h3>Eventos privados</h3><p>El espacio para tu grupo, con menú acordado antes y atención dedicada.</p><p class="precio">Cotización gratis</p></div></article>
+        <article class="k-card"><div class="demo-foto3"></div><div class="cuerpo"><h3>Para llevar</h3><p>Ordena por WhatsApp y recoge sin esperar. Listo en 20 minutos.</p><p class="precio">Sin mínimo</p></div></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Panel con zoom (.k-zoom) y distintivo flotante (.k-flota) -->
+  <section class="k-sec" style="padding-top:3rem">
+    <div class="wrap">
+      <span class="etiqueta-mov">.k-zoom + .k-flota</span>
+      <div class="k-zoom panel-plato reveal">
+        <div class="fondo" aria-hidden="true"></div>
+        <div style="position:relative;padding:1rem">
+          <p style="font-family:var(--fuente-titulos);font-size:clamp(1.9rem,5vw,3rem);line-height:1.05" data-es="El plato de la casa" data-en="The house specialty">El plato de la casa</p>
+          <p style="opacity:.92;margin:.5rem 0 1.2rem" data-es="El fondo se acerca al bajar y el distintivo flota." data-en="The background zooms in as you scroll and the badge floats.">El fondo se acerca al bajar y el distintivo flota.</p>
+          <span class="chip-flota k-flota" data-es="★ El favorito de la casa" data-en="★ The house favorite">★ El favorito de la casa</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="k-cta" id="cierre">
+    <div class="wrap reveal">
+      <h2 data-es="¿Nos vemos esta semana?" data-en="See you this week?">¿Nos vemos esta semana?</h2>
+      <p data-es="Página demo de los componentes de movimiento del kit propio. Patrones escritos desde cero, sin plantillas ajenas." data-en="Demo page for the kit's own motion components. Patterns written from scratch, no third-party templates.">Página demo de los componentes de movimiento del kit propio. Patrones escritos desde cero, sin plantillas ajenas.</p>
+      <a class="btn btn--claro k-magnetico" href="#top" data-es="Volver arriba" data-en="Back to top">Volver arriba</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="k-footer">
+  <div class="wrap">
+    <div class="fila">
+      <div>
+        <p class="firma">La Mesa</p>
+        <p style="opacity:.85;max-width:22rem">Cocina latina en Houston. Página demo del kit de componentes.</p>
+      </div>
+      <nav>
+        <a href="#cifras">El negocio</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#cierre">Reservar</a>
+      </nav>
+    </div>
+    <div class="legal">
+      <span>© <span data-anio>2026</span> La Mesa · Demo</span>
+      <span>Kit de componentes · Movimiento</span>
+    </div>
+  </div>
+</footer>
+
+<script src="kit.js" defer></script>
+</body>
+</html>
