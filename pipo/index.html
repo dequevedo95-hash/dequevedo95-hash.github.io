@@ -470,6 +470,11 @@ function hablar(texto, alTerminar){
          Pipo terminó de hablar, para no captar el final de su propia voz. */
       enfriamientoHasta = Date.now() + ENFRIAMIENTO_MS;
       if(micOn) programarReinicio(ENFRIAMIENTO_MS + 60);
+      /* Modo conversación: si la orden vino por voz, el oído queda abierto
+         25 s tras la respuesta, para seguir la charla sin repetir «Pipo»
+         en cada frase. La ventana se renueva con cada respuesta. */
+      if(ultimoOrigenVoz && micOn && !alertaActual){ despierto = true; despiertoHasta = Date.now() + 25000; }
+      ultimoOrigenVoz = false;
       if(alTerminar) alTerminar();
     };
     u.onend = cerrar;
@@ -864,7 +869,10 @@ function procesarComando(raw){
 }
 
 /* ================= Reconocimiento de voz (patrón seguro Android) =================
-   continuous = false: cada sesión escucha una frase y termina sola.
+   continuous = true: la sesión de escucha se mantiene abierta en vez de
+   cerrarse y reabrirse a cada rato. Cada reapertura hacía sonar el pitido
+   del servicio de voz de Android y Pipo pitaba sin parar; con la sesión
+   continua ese pitido solo suena cuando una sesión se abre de verdad.
    onend la reinicia con una espera corta; los errores repetidos alargan la
    espera y, si pasan del tope, la escucha se detiene con un aviso visible. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -873,13 +881,15 @@ let activado = false;        /* ya pasó por el botón «Activar a Pipo» */
 let micOn = false;           /* Angel quiere que Pipo escuche */
 let recActivo = false;       /* hay una sesión de reconocimiento viva */
 let despierto = false, despiertoHasta = 0;
+let ultimoOrigenVoz = false;   /* la última orden llegó por voz: al responder, el oído queda abierto para seguir la conversación sin repetir «Pipo» */
 let reinicioTimer = null;
 let erroresSeguidos = 0;
 const TOPE_ERRORES = 6;
 
 function estadoEscucha(){
   if(hablando) return;
-  if(micOn){ cara('listening'); setStatus('👂 <b>Escuchando…</b> di <b>«Pipo»</b> y luego tu pedido.'); }
+  if(micOn && despierto && Date.now() < despiertoHasta){ cara('listening'); setStatus('💬 <b>Estoy en conversación contigo:</b> habla no más, sin decir «Pipo».'); }
+  else if(micOn){ cara('listening'); setStatus('👂 <b>Escuchando…</b> di <b>«Pipo»</b> y luego tu pedido.'); }
   else if(activado){ cara('idle'); setStatus('Estoy callado. Toca el botón grande para que te escuche.'); }
   else { cara('idle'); setStatus('Toca <b>«Activar a Pipo»</b> para despertarme.'); }
 }
@@ -892,7 +902,7 @@ function actualizarBotonActivar(){
 function crearRec(){
   const r = new SR();
   r.lang = 'es-ES';
-  r.continuous = false;
+  r.continuous = true;
   r.interimResults = true;
   r.maxAlternatives = 1;
   r.onstart = () => {
@@ -990,6 +1000,9 @@ function onResultado(ev){
   erroresSeguidos = 0;
   limpiarError();
   mostrarOido('Tú: «' + candidato + '»');
+  /* Si suena una alerta y Angel habla, los pitidos paran; el aviso visual
+     se queda en pantalla hasta que lo toque. */
+  if(alertaActual) pararAlerta();
   const mPipo = candidato.match(/\bpipo\b/i);
   if(mPipo){
     /* La orden es SOLO lo que va después del nombre; el nombre se quita. */
@@ -997,10 +1010,12 @@ function onResultado(ev){
     if(!norm(restoRaw)){
       /* Dijeron solo «Pipo»: saludo y oído abierto. Para este caso va el
          saludo, NUNCA el mensaje de «eso no lo sé hacer». */
-      despierto = true; despiertoHasta = Date.now() + 9000;
+      despierto = true; despiertoHasta = Date.now() + 20000;
+      ultimoOrigenVoz = true;
       hablar('¡Dime, Angel!');
     }else{
       despierto = false;
+      ultimoOrigenVoz = true;
       procesarComando(restoRaw);
     }
     return;
@@ -1008,6 +1023,7 @@ function onResultado(ev){
   if(despierto){
     if(Date.now() > despiertoHasta){ despierto = false; return; }
     despierto = false;
+    ultimoOrigenVoz = true;
     procesarComando(candidato);
   }
 }
@@ -1174,7 +1190,7 @@ $('saveTimer').addEventListener('click', () => {
 /* ---------- Arranque (sin voz hasta que Angel toque el botón) ---------- */
 actualizarBotonActivar();
 estadoEscucha();
-diag('versión 5 lista (antieco + datos + cerebro en Cloudflare); esperando que toques «Activar a Pipo»');
+diag('versión 6 lista (escucha continua sin pitidos + conversación seguida + cerebro); esperando que toques «Activar a Pipo»');
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
